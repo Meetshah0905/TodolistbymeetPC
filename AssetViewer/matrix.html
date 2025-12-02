@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <title>Matrix View - Focus List</title>
+  <script>
+    (function () {
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        if (storedTheme && storedTheme !== 'system') {
+          document.documentElement.setAttribute('data-theme', storedTheme);
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (error) {
+        console.warn('Theme bootstrap failed', error);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <h1 class="logo">Focus List</h1>
+    </div>
+    <div class="header-right">
+      <nav class="primary-nav" id="primaryNav" data-nav-menu>
+        <a href="index.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">List View</a>
+        <a href="calendar.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Calendar View</a>
+        <a href="motivation.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Motivation 🕙</a>
+
+      </nav>
+      <div class="header-actions">
+        <!-- Global Music Controls (shown when music is playing) -->
+
+        <button id="themeToggle" class="btn-ghost" aria-label="Toggle theme">
+          <span class="theme-icon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="matrix-container">
+    <section class="matrix-hero panel">
+      <div>
+        <p class="matrix-kicker">Eisenhower Matrix</p>
+        <h2 class="matrix-title">Decide what deserves your energy</h2>
+        <p class="matrix-subtitle">Re-classify anything on your Focus List into the four urgency/importance quadrants.
+          Updates sync instantly with your main list and calendar.</p>
+      </div>
+      <div class="matrix-legend">
+        <div class="matrix-legend-item">
+          <span class="matrix-dot IU"></span>
+          <span>Important &amp; urgent (IU)</span>
+        </div>
+        <div class="matrix-legend-item">
+          <span class="matrix-dot IBNU"></span>
+          <span>Important, not urgent (IBNU)</span>
+        </div>
+        <div class="matrix-legend-item">
+          <span class="matrix-dot NIBU"></span>
+          <span>Not important, urgent (NIBU)</span>
+        </div>
+        <div class="matrix-legend-item">
+          <span class="matrix-dot NINU"></span>
+          <span>Not important, not urgent (NINU)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="matrix-date-toolbar">
+      <div class="matrix-date-nav">
+        <button type="button" class="matrix-nav-btn" data-matrix-prev>← Previous</button>
+        <button type="button" class="matrix-nav-btn" data-matrix-today>Today</button>
+        <button type="button" class="matrix-nav-btn" data-matrix-next>Next →</button>
+      </div>
+      <span class="matrix-date-display" data-matrix-date>Today</span>
+    </section>
+
+    <section class="matrix-grid" id="matrixGrid">
+      <section class="matrix-quadrant" data-category="IU">
+        <header class="matrix-quadrant-header">
+          <div>
+            <h3>Quadrant I · Important &amp; Urgent (IU)</h3>
+            <p>High-value tasks with immediate consequences if ignored.</p>
+          </div>
+          <span class="matrix-count" data-count="IU">0</span>
+        </header>
+        <form class="matrix-add" data-add-form="IU">
+          <input type="text" class="matrix-input" placeholder="Add a task for this quadrant" data-add-title="IU"
+            aria-label="Task title for Quadrant I">
+          <textarea class="matrix-textarea" rows="2" placeholder="Notes (optional)" data-add-note="IU"
+            aria-label="Task notes for Quadrant I"></textarea>
+          <button type="submit" class="matrix-add-btn" data-add-submit="IU">Add task</button>
+        </form>
+        <div class="matrix-list" data-category-list="IU"></div>
+      </section>
+
+      <section class="matrix-quadrant" data-category="IBNU">
+        <header class="matrix-quadrant-header">
+          <div>
+            <h3>Quadrant II · Important, Not Urgent (IBNU)</h3>
+            <p>Strategic tasks that compound over time without fixed deadlines.</p>
+          </div>
+          <span class="matrix-count" data-count="IBNU">0</span>
+        </header>
+        <form class="matrix-add" data-add-form="IBNU">
+          <input type="text" class="matrix-input" placeholder="Add a task for this quadrant" data-add-title="IBNU"
+            aria-label="Task title for Quadrant II">
+          <textarea class="matrix-textarea" rows="2" placeholder="Notes (optional)" data-add-note="IBNU"
+            aria-label="Task notes for Quadrant II"></textarea>
+          <button type="submit" class="matrix-add-btn" data-add-submit="IBNU">Add task</button>
+        </form>
+        <div class="matrix-list" data-category-list="IBNU"></div>
+      </section>
+
+      <section class="matrix-quadrant" data-category="NIBU">
+        <header class="matrix-quadrant-header">
+          <div>
+            <h3>Quadrant III · Not Important, Urgent (NIBU)</h3>
+            <p>Time-sensitive tasks that don’t require your expertise.</p>
+          </div>
+          <span class="matrix-count" data-count="NIBU">0</span>
+        </header>
+        <form class="matrix-add" data-add-form="NIBU">
+          <input type="text" class="matrix-input" placeholder="Add a task for this quadrant" data-add-title="NIBU"
+            aria-label="Task title for Quadrant III">
+          <textarea class="matrix-textarea" rows="2" placeholder="Notes (optional)" data-add-note="NIBU"
+            aria-label="Task notes for Quadrant III"></textarea>
+          <button type="submit" class="matrix-add-btn" data-add-submit="NIBU">Add task</button>
+        </form>
+        <div class="matrix-list" data-category-list="NIBU"></div>
+      </section>
+
+      <section class="matrix-quadrant" data-category="NINU">
+        <header class="matrix-quadrant-header">
+          <div>
+            <h3>Quadrant IV · Not Important, Not Urgent (NINU)</h3>
+            <p>Low-value distractions that steal focus and energy.</p>
+          </div>
+          <span class="matrix-count" data-count="NINU">0</span>
+        </header>
+        <form class="matrix-add" data-add-form="NINU">
+          <input type="text" class="matrix-input" placeholder="Add a task for this quadrant" data-add-title="NINU"
+            aria-label="Task title for Quadrant IV">
+          <textarea class="matrix-textarea" rows="2" placeholder="Notes (optional)" data-add-note="NINU"
+            aria-label="Task notes for Quadrant IV"></textarea>
+          <button type="submit" class="matrix-add-btn" data-add-submit="NINU">Add task</button>
+        </form>
+        <div class="matrix-list" data-category-list="NINU"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="theme.js" defer></script>
+  <script src="header.js" defer></script>
+
+  <script src="matrix.js" defer></script>
+</body>
+
+</html>

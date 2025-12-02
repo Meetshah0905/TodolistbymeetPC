@@ -1,0 +1,224 @@
+yes—Replit can do it. Here’s a single, copy-paste brief you can give Replit AI to add **daily history + profile name + export/import** to your current to-do + Pomodoro app (pure HTML/CSS/JS, localStorage only).
+
+---
+
+## Prompt for Replit AI
+
+**Goal:**
+Add a **Profile** (name + anonymous id) and a **History** system that logs daily stats: tasks added/done/cancelled, Pomodoro sessions, and focused minutes. Add a History UI to view any date. Keep everything **client-side** with `localStorage`. Include **Export/Import JSON**.
+
+**Do not change** existing features (tasks, progress, Pomodoro, theme). No backend.
+
+---
+
+### 1) Data model (localStorage keys)
+
+Add these keys:
+
+* `profile_v1` → `{ id: string, name: string }` (generate `crypto.randomUUID()` once; default name “Guest”)
+* `history_v1` → object keyed by `YYYY-MM-DD`:
+
+```js
+// example history object
+{
+  "2025-02-10": { tasksAdded: 2, tasksDone: 5, tasksCancelled: 1, pomoSessions: 3, focusMinutes: 75, notes: "" },
+  "2025-02-11": { ... }
+}
+```
+
+Utility helpers (create in `app.js`):
+
+```js
+const PROFILE_KEY = "profile_v1";
+const HISTORY_KEY = "history_v1";
+const todayKey = () => new Date().toISOString().slice(0,10);
+
+function loadProfile(){
+  let p = JSON.parse(localStorage.getItem(PROFILE_KEY) || "null");
+  if (!p) { p = { id: crypto.randomUUID(), name: "Guest" }; localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }
+  return p;
+}
+function saveProfile(p){ localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }
+
+function loadHistory(){ return JSON.parse(localStorage.getItem(HISTORY_KEY) || "{}"); }
+function saveHistory(h){ localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+
+const profile = loadProfile();
+const history = loadHistory();
+function ensureDay(d=todayKey()){
+  history[d] ||= {tasksAdded:0,tasksDone:0,tasksCancelled:0,pomoSessions:0,focusMinutes:0,notes:""};
+}
+```
+
+Event loggers (call these from existing handlers):
+
+```js
+function logTaskAdded(){ ensureDay(); history[todayKey()].tasksAdded++; saveHistory(history); }
+function logTaskDone(){ ensureDay(); history[todayKey()].tasksDone++; saveHistory(history); }
+function logTaskCancelled(){ ensureDay(); history[todayKey()].tasksCancelled++; saveHistory(history); }
+function logPomoFinished(minutes){ ensureDay(); const d = history[todayKey()]; d.pomoSessions++; d.focusMinutes += minutes; saveHistory(history); }
+```
+
+Wire them:
+
+* After adding a task → `logTaskAdded()`
+* When status changes to done → `logTaskDone()`
+* When cancelling → `logTaskCancelled()`
+* In Pomodoro `tick()` when a **work** session reaches 0 → `logPomoFinished(state.pomo.work)`
+
+---
+
+### 2) UI — add a History card
+
+In `index.html`, below your two existing cards, add:
+
+```html
+<section class="card" id="historyCard">
+  <header class="card-head">
+    <h2>History</h2>
+    <div class="profile-row">
+      <input id="profileName" placeholder="Your name" aria-label="Your name">
+      <small id="profileId"></small>
+      <button id="exportData" class="ghost">Export JSON</button>
+      <label class="ghost">Import JSON
+        <input id="importData" type="file" accept="application/json" hidden>
+      </label>
+    </div>
+  </header>
+
+  <div class="history-controls">
+    <input type="date" id="histDate" />
+    <button id="todayBtn" class="chip">Today</button>
+    <button id="weekBtn" class="chip">This week</button>
+  </div>
+
+  <ul id="historyList" class="history-list"></ul>
+</section>
+```
+
+CSS in `styles.css` (match your design tokens):
+
+```css
+#historyCard .profile-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+#historyCard .history-controls { display:flex; gap:8px; align-items:center; margin:8px 0 10px; }
+.history-list { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.history-list li { background: var(--bg); border:1px solid var(--border); border-radius: 10px; padding:10px; }
+```
+
+---
+
+### 3) History logic + profile bindings (in `app.js`)
+
+```js
+// refs
+const profileName = document.getElementById("profileName");
+const profileId = document.getElementById("profileId");
+const histDate = document.getElementById("histDate");
+const todayBtn = document.getElementById("todayBtn");
+const weekBtn = document.getElementById("weekBtn");
+const historyList = document.getElementById("historyList");
+
+// init profile UI
+if (profileName) {
+  profileName.value = profile.name;
+  profileId.textContent = `ID: ${profile.id}`;
+  profileName.addEventListener("input", () => {
+    profile.name = profileName.value.trim() || "Guest";
+    saveProfile(profile);
+  });
+}
+
+// date selection defaults to today
+if (histDate) {
+  histDate.value = todayKey();
+  histDate.addEventListener("change", renderHistory);
+  todayBtn?.addEventListener("click", () => { histDate.value = todayKey(); renderHistory(); });
+  weekBtn?.addEventListener("click", renderWeek);
+}
+
+// render a single day
+function renderHistory(){
+  const d = histDate.value || todayKey();
+  ensureDay(d);
+  const day = history[d];
+  historyList.innerHTML = `
+    <li><strong>${d}</strong> — ${profile.name}</li>
+    <li>Tasks added: <strong>${day.tasksAdded}</strong></li>
+    <li>Tasks done: <strong>${day.tasksDone}</strong></li>
+    <li>Tasks cancelled: <strong>${day.tasksCancelled}</strong></li>
+    <li>Focus sessions: <strong>${day.pomoSessions}</strong></li>
+    <li>Focus minutes: <strong>${day.focusMinutes}</strong></li>
+  `;
+}
+
+// simple week summary (last 7 days)
+function renderWeek(){
+  const days = [...Array(7)].map((_,i)=>{
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    ensureDay(k);
+    const x = history[k];
+    return { k, ...x };
+  }).reverse();
+  historyList.innerHTML = days.map(d => `
+    <li>
+      <strong>${d.k}</strong><br/>
+      Added: ${d.tasksAdded} • Done: ${d.tasksDone} • Cancelled: ${d.tasksCancelled} • Sessions: ${d.pomoSessions} • Minutes: ${d.focusMinutes}
+    </li>
+  `).join("");
+}
+
+// export / import
+document.getElementById("exportData")?.addEventListener("click", () => {
+  const payload = { profile, tasks: state.tasks, history };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `focuslist-backup-${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("importData")?.addEventListener("change", async (e) => {
+  const f = e.target.files?.[0]; if (!f) return;
+  const text = await f.text();
+  const data = JSON.parse(text);
+  if (data.profile) localStorage.setItem(PROFILE_KEY, JSON.stringify(data.profile));
+  if (data.tasks) localStorage.setItem("focuslist_v1", JSON.stringify({tasks: data.tasks}));
+  if (data.history) localStorage.setItem(HISTORY_KEY, JSON.stringify(data.history));
+  location.reload();
+});
+
+// call one of the renders on load
+renderHistory?.();
+```
+
+**Remember to call the loggers in your existing handlers:**
+
+* After adding a task → `logTaskAdded();`
+* When checkbox marks done → `logTaskDone();`
+* When cancelling → `logTaskCancelled();`
+* In Pomodoro `tick()` when a work session completes → `logPomoFinished(state.pomo.work);`
+
+---
+
+### 4) Acceptance criteria
+
+* First visit creates a profile with random ID and name “Guest”. Editing name updates and persists.
+* Each day has a log row (auto-created on first event).
+* Adding/done/cancelled tasks update today’s counters immediately.
+* Completing a **work** Pomodoro increments sessions and adds minutes equal to current work duration.
+* History card shows today by default; picking another date shows that day; “This week” lists the last 7 days.
+* Export downloads a JSON with `profile`, `tasks`, and `history`; Import restores them and reloads.
+* All data remains purely in localStorage; app still works offline; Netlify deployment unchanged.
+
+---
+
+### 5) (Optional, only if there’s time)
+
+* Add a simple **weekly bar chart** (minutes focused) using a tiny inline `<canvas>` and vanilla canvas code (no libraries).
+* Add a **notes** textarea per day in the history view and persist `day.notes`.
+
+---
+
+Use this exact brief to guide edits across `index.html`, `styles.css`, and `app.js`.

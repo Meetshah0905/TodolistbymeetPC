@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <title>Focus List - To-Do & Pomodoro</title>
+  <script>
+    (function () {
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        if (storedTheme && storedTheme !== 'system') {
+          document.documentElement.setAttribute('data-theme', storedTheme);
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (error) {
+        console.warn('Theme bootstrap failed', error);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <h1 class="logo">Focus List</h1>
+    </div>
+    <div class="header-right">
+      <nav class="primary-nav" id="primaryNav" data-nav-menu>
+        <a href="day-planner.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Day Planner</a>
+        <a href="habit-tracker.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Habit Tracker</a>
+        <a href="matrix.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Matrix View</a>
+        <a href="calendar.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Calendar View</a>
+        <a href="motivation.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Motivation 🕙</a>
+        <a href="goal-countdown.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Goal
+          Countdown</a>
+        <a href="ambience.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Ambience 🎵</a>
+      </nav>
+      <div class="header-actions">
+        <input type="search" id="searchInput" placeholder="Search tasks..." aria-label="Search tasks">
+        <button id="themeToggle" class="btn-ghost" aria-label="Toggle theme">
+          <span class="theme-icon">☀️</span>
+        </button>
+        <button id="clearAll" class="btn-ghost" aria-label="Clear all tasks">Clear All</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-grid">
+    <section class="todo-panel panel">
+      <div class="todo-header-nav"
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 class="section-title" style="margin: 0;">To-do list</h2>
+        <div class="date-navigation" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <button id="datePrevBtn" class="btn-ghost"
+            style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem;">← Previous</button>
+          <button id="dateTodayBtn" class="btn-ghost"
+            style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem;">Today</button>
+          <button id="dateNextBtn" class="btn-ghost"
+            style="padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.9rem;">Next →</button>
+          <span id="currentDateDisplay"
+            style="color: var(--text-secondary); font-size: 0.9rem; padding: 0.75rem 1rem; min-width: 120px; text-align: center;"></span>
+        </div>
+      </div>
+      <div id="pendingMessage" class="pending-message" role="status" aria-live="polite" hidden></div>
+
+      <div class="progress-section">
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+            aria-valuemax="100"></div>
+        </div>
+        <span class="progress-label" id="progressLabel" aria-live="polite">0%</span>
+      </div>
+
+      <div class="counts" aria-live="polite">
+        <span class="count-item">Total: <strong id="countTotal">0</strong></span>
+        <span class="count-separator">•</span>
+        <span class="count-item">Active: <strong id="countActive">0</strong></span>
+        <span class="count-separator">•</span>
+        <span class="count-item">Done: <strong id="countDone">0</strong></span>
+        <span class="count-separator">•</span>
+        <span class="count-item">Cancelled: <strong id="countCancelled">0</strong></span>
+      </div>
+
+      <div class="total-estimated-time-box" id="totalEstimatedTimeBox" aria-live="polite">
+        <div class="time-display-item">
+          <span class="time-icon">⏱</span>
+          <span class="time-label">Total Estimated:</span>
+          <span class="time-value" id="totalEstimatedTime">0h 0m</span>
+        </div>
+        <div class="time-display-item">
+          <span class="time-label">Available:</span>
+          <input type="number" id="totalAvailableHours" min="0" max="24" step="0.5" value="0" placeholder="Hours"
+            class="available-hours-input" aria-label="Total available hours for the day">
+          <span class="time-label">h</span>
+        </div>
+        <div class="time-display-item remaining-time">
+          <span class="time-label">Remaining:</span>
+          <span class="time-value" id="remainingTime">0h 0m</span>
+        </div>
+      </div>
+
+      <div class="filters">
+        <button class="chip filter-chip active" data-filter="all">All</button>
+        <button class="chip filter-chip" data-filter="active">Active</button>
+        <button class="chip filter-chip" data-filter="done">Done</button>
+        <button class="chip filter-chip" data-filter="cancelled">Cancelled</button>
+      </div>
+
+      <div class="add-task">
+        <input type="text" id="taskTitle" placeholder="Task title (required)" required aria-label="Task title">
+        <input type="text" id="taskNote" placeholder="Add a note (optional)" aria-label="Task note">
+        <div class="task-time-estimate">
+          <label for="taskHours">Estimated Time</label>
+          <div class="time-inputs">
+            <input type="number" id="taskHours" min="0" max="23" value="0" placeholder="H" aria-label="Hours">
+            <span class="time-separator">:</span>
+            <input type="number" id="taskMinutes" min="0" max="59" value="0" placeholder="M" aria-label="Minutes">
+          </div>
+        </div>
+        <button id="addTaskBtn" class="btn-primary">Add Task</button>
+      </div>
+
+      <div class="task-list" id="taskList"></div>
+    </section>
+
+    <section class="pomo-panel panel">
+      <div class="hero-bg" id="heroBg">
+        <video class="hero-video" id="heroVideo" autoplay loop muted playsinline preload="auto"
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+          <source src="assets/background-video.mp4.mp4" type="video/mp4">
+          <source src="assets/background-video.mp4" type="video/mp4">
+          <!-- Fallback to image if video is not available -->
+        </video>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <h2 class="pomo-heading" contenteditable="false" id="pomoHeading" aria-label="Focus goal">What do you want to
+            focus on?</h2>
+
+          <div class="mode-pills">
+            <button class="pill mode-pill active" data-mode="work">Focus</button>
+            <button class="pill mode-pill" data-mode="short">Short Break</button>
+            <button class="pill mode-pill" data-mode="long">Long Break</button>
+            <button class="pill mode-pill" data-mode="deepwork">Deep Work</button>
+          </div>
+
+          <div class="timer-display" id="timerDisplay">25:00</div>
+
+          <div class="controls">
+            <button id="startPauseBtn" class="btn-primary btn-large">Start</button>
+            <button id="resetBtn" class="btn-ghost">Reset</button>
+            <button id="attachTaskBtn" class="btn-ghost" disabled>Attach Selected Task</button>
+          </div>
+
+          <div class="pomo-info">
+            <p class="attached-task" id="attachedTask">No task attached</p>
+            <p class="rounds-counter">Rounds: <strong id="roundsCount">0</strong></p>
+          </div>
+
+          <details class="settings">
+            <summary>Settings</summary>
+            <div class="settings-content">
+              <label>
+                Work (min)
+                <input id="durWork" type="number" min="5" max="90" value="25">
+              </label>
+              <label>
+                Short break (min)
+                <input id="durShort" type="number" min="3" max="30" value="5">
+              </label>
+              <label>
+                Long break (min)
+                <input id="durLong" type="number" min="5" max="60" value="15">
+              </label>
+              <label>
+                Rounds until long break
+                <input id="roundsLong" type="number" min="1" max="12" value="4">
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoNext">
+                Auto-next session
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="soundOn" checked>
+                Sound on completion
+              </label>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shortcuts">
+      <span><kbd>Space</kbd> Start/Pause</span>
+      <span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> Switch modes</span>
+      <span><kbd>R</kbd> Reset</span>
+      <span><kbd>Enter</kbd> Add task</span>
+    </div>
+  </footer>
+
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+    aria-describedby="modalMessage">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-icon">⚠️</div>
+      <h3 id="modalTitle" class="modal-title">Clear All Tasks?</h3>
+      <p id="modalMessage" class="modal-message">This will permanently delete all your tasks. This action cannot be
+        undone.</p>
+      <div class="modal-actions">
+        <button id="modalCancel" class="btn-modal btn-cancel">Cancel</button>
+        <button id="modalConfirm" class="btn-modal btn-danger">Clear All</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script src="theme.js" defer></script>
+  <script src="header.js" defer></script>
+
+  <script src="app.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Habit Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .habit-tracker-page {
+      min-height: 100vh;
+      padding: 2rem;
+      background: var(--surface);
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(10, 132, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(52, 199, 89, 0.06) 0%, transparent 50%);
+    }
+
+    .habit-container {
+      max-width: 1800px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Main Card */
+    .habit-main-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+    }
+
+    /* Header Section */
+    .habit-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .habit-month-nav {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .habit-month-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .habit-nav-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+      font-size: 1.2rem;
+    }
+
+    .habit-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* Summary Bar */
+    .habit-summary {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .habit-summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .habit-summary-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .habit-summary-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-progress-container {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .habit-progress-bar {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+      margin-top: 0.5rem;
+    }
+
+    .habit-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34c759, #30d158);
+      border-radius: 6px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(52, 199, 89, 0.5);
+    }
+
+    .habit-progress-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 0.25rem;
+    }
+
+    /* Table Container */
+    .habit-table-wrapper {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: 600px;
+      margin-bottom: 1.5rem;
+    }
+
+    .habit-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 800px;
+    }
+
+    .habit-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(20px);
+    }
+
+    .habit-table th {
+      padding: 1rem 0.75rem;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(20px);
+    }
+
+    .habit-table th.habit-name-col {
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(20px);
+      text-align: left;
+      padding-left: 1rem;
+      min-width: 200px;
+    }
+
+    .habit-table td {
+      padding: 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .habit-table td.habit-name-cell {
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      text-align: left;
+      padding-left: 1rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .habit-table tbody tr {
+      cursor: move;
+      transition: all 0.2s ease;
+    }
+
+    .habit-table tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .habit-table tbody tr.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .habit-table tbody tr.drag-over {
+      border-top: 2px solid #34c759;
+      box-shadow: 0 -2px 8px rgba(52, 199, 89, 0.3);
+    }
+
+    .week-header {
+      background: rgba(255, 255, 255, 0.05) !important;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .day-header {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .day-number {
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 0.25rem;
+    }
+
+    /* Checkbox */
+    .habit-checkbox {
+      width: 28px;
+      height: 28px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .habit-checkbox:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-checkbox.checked {
+      background: linear-gradient(135deg, #34c759, #30d158);
+      border-color: #34c759;
+      box-shadow:
+        0 0 15px rgba(52, 199, 89, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .habit-checkbox.checked::after {
+      content: '✓';
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .habit-checkbox.today {
+      border-color: #0a84ff;
+      box-shadow:
+        0 0 20px rgba(10, 132, 255, 0.6),
+        0 0 10px rgba(10, 132, 255, 0.4),
+        inset 0 0 10px rgba(10, 132, 255, 0.2);
+      animation: todayGlow 2s ease-in-out infinite;
+    }
+
+    .habit-checkbox.today.checked {
+      border-color: #0a84ff;
+      box-shadow:
+        0 0 25px rgba(10, 132, 255, 0.8),
+        0 0 15px rgba(52, 199, 89, 0.6),
+        0 0 10px rgba(10, 132, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes todayGlow {
+      0%, 100% {
+        box-shadow:
+          0 0 20px rgba(10, 132, 255, 0.6),
+          0 0 10px rgba(10, 132, 255, 0.4),
+          inset 0 0 10px rgba(10, 132, 255, 0.2);
+      }
+      50% {
+        box-shadow:
+          0 0 25px rgba(10, 132, 255, 0.8),
+          0 0 15px rgba(10, 132, 255, 0.6),
+          inset 0 0 15px rgba(10, 132, 255, 0.3);
+      }
+    }
+
+    /* Add Habit Section */
+    .habit-add-section {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 1.5rem;
+    }
+
+    .habit-add-input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .habit-add-input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-add-btn {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #0a84ff, #0071e3);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+    }
+
+    .habit-add-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(10, 132, 255, 0.4);
+    }
+
+    .habit-copy-btn,
+    .habit-stats-btn {
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .habit-copy-btn:hover,
+    .habit-stats-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .habit-delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+
+    .habit-delete-btn:hover {
+      color: var(--danger);
+      background: rgba(255, 69, 58, 0.1);
+    }
+
+    /* Daily Progress Row */
+    .habit-daily-progress {
+      display: flex;
+      gap: 0.5rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    .habit-daily-item {
+      min-width: 80px;
+      text-align: center;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .habit-daily-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .habit-daily-percent {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .habit-daily-stats {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
+    /* Graphs Section */
+    .habit-graphs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    .habit-graph-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+    }
+
+    .habit-graph-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+    }
+
+    .habit-chart-container {
+      position: relative;
+      height: 300px;
+    }
+
+    .habit-chart-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .habit-analysis-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .habit-analysis-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .habit-analysis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .habit-analysis-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .habit-analysis-numbers {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .habit-analysis-bar-container {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .habit-analysis-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #34c759, #30d158);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
+    }
+
+    /* Weekly Progress Section */
+    .habit-weekly-progress {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .habit-week-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-week-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-week-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-week-dates {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .habit-week-days {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .habit-week-day {
+      flex: 1;
+      min-width: 35px;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 0.25rem;
+    }
+
+    .habit-week-bars {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-end;
+      height: 120px;
+      margin-bottom: 1rem;
+    }
+
+    .habit-week-bar {
+      flex: 1;
+      background: linear-gradient(180deg, #34c759, #30d158);
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: all 0.3s ease;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(52, 199, 89, 0.3);
+    }
+
+    .habit-week-bar:hover {
+      opacity: 0.8;
+      transform: scaleY(1.05);
+    }
+
+    .habit-week-bar-value {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .habit-week-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-week-completed {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-week-percent {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* Overview Donut Chart */
+    .habit-overview-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .habit-overview-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-overview-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .habit-donut-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .habit-donut-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .habit-donut-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .habit-donut-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .habit-donut-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-donut-legend {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .habit-donut-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .habit-donut-legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+
+    .habit-donut-legend-text {
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    /* Top 10 Habits Section */
+    .habit-top-habits {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .habit-top-habit-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s;
+    }
+
+    .habit-top-habit-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .habit-top-habit-number {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      min-width: 30px;
+    }
+
+    .habit-top-habit-name {
+      flex: 1;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .habit-top-habit-percent {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #34c759;
+      min-width: 50px;
+      text-align: right;
+    }
+
+    /* Enhanced Line Graph */
+    .habit-line-graph-card {
+      grid-column: 1 / -1;
+    }
+
+    .habit-line-graph-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    @media (max-width: 1200px) {
+      .habit-graphs {
+        grid-template-columns: 1fr;
+      }
+
+      .habit-overview-section {
+        grid-template-columns: 1fr;
+      }
+
+      .habit-weekly-progress {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Modal Styles */
+    .habit-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .habit-modal {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .habit-modal-large {
+      max-width: 900px;
+    }
+
+    .habit-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .habit-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 2rem;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+
+    .habit-modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .habit-modal-body {
+      padding: 1.5rem;
+    }
+
+    .habit-modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-btn-primary {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #0a84ff, #0071e3);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .habit-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(10, 132, 255, 0.4);
+    }
+
+    .habit-btn-secondary {
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .habit-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .habit-copy-info {
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .habit-copy-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .habit-copy-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s;
+    }
+
+    .habit-copy-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .habit-copy-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .habit-copy-checkbox.checked {
+      background: #34c759;
+      border-color: #34c759;
+    }
+
+    .habit-copy-checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .habit-copy-name {
+      flex: 1;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .habit-stats-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .habit-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .habit-stat-card {
+      padding: 1.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .habit-stat-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .habit-stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .habit-year-overview {
+      margin-top: 2rem;
+    }
+
+    .habit-year-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .habit-year-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 0.5rem;
+    }
+
+    .habit-year-month {
+      padding: 1rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .habit-year-month:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .habit-year-month.active {
+      border-color: #34c759;
+      background: rgba(52, 199, 89, 0.1);
+    }
+
+    .habit-year-month-name {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    .habit-year-month-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    @media (max-width: 768px) {
+      .habit-tracker-page {
+        padding: 1rem;
+      }
+
+      .habit-month-title {
+        font-size: 1.75rem;
+      }
+
+      .habit-summary {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .habit-add-section {
+        flex-direction: column;
+      }
+
+      .habit-copy-btn,
+      .habit-stats-btn {
+        width: 100%;
+      }
+
+      .habit-modal {
+        margin: 1rem;
+      }
+
+      .habit-stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .habit-year-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="habit-tracker-page">
+    <div class="header">
+      <div class="header-left">
+        <h1 class="page-title">Habit Tracker</h1>
+      </div>
+      <div class="header-right">
+        <nav class="primary-nav" id="primaryNav" data-nav-menu>
+          <a href="index.html" class="btn-ghost" style="text-decoration: none; color: inherit;">To-Do List</a>
+          <a href="day-planner.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Day Planner</a>
+          <a href="matrix.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Matrix View</a>
+          <a href="calendar.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Calendar View</a>
+          <a href="motivation.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Motivation 🕙</a>
+          <a href="goal-countdown.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Goal
+            Countdown</a>
+
+        </nav>
+        <div class="header-actions">
+          <!-- Global Music Controls (shown when music is playing) -->
+
+        </div>
+      </div>
+    </div>
+
+    <div class="habit-container">
+      <!-- Main Card -->
+      <div class="habit-main-card">
+        <!-- Header -->
+        <div class="habit-header">
+          <div class="habit-month-nav">
+            <button class="habit-nav-btn" id="prevMonth" aria-label="Previous month">←</button>
+            <h2 class="habit-month-title" id="currentMonth">November 2025</h2>
+            <button class="habit-nav-btn" id="nextMonth" aria-label="Next month">→</button>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="habit-summary">
+          <div class="habit-summary-item">
+            <span class="habit-summary-label">Number of habits</span>
+            <span class="habit-summary-value" id="habitCount">0</span>
+          </div>
+          <div class="habit-summary-item">
+            <span class="habit-summary-label">Completed habits</span>
+            <span class="habit-summary-value" id="completedCount">0</span>
+          </div>
+          <div class="habit-summary-item habit-progress-container">
+            <span class="habit-summary-label">Progress</span>
+            <div class="habit-progress-bar">
+              <div class="habit-progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <span class="habit-progress-text" id="progressText">0%</span>
+          </div>
+        </div>
+
+        <!-- Add Habit Section -->
+        <div class="habit-add-section">
+          <input type="text" class="habit-add-input" id="newHabitInput" placeholder="Add a new habit..."
+            aria-label="New habit name">
+          <button class="habit-add-btn" id="addHabitBtn">Add</button>
+          <button class="habit-copy-btn" id="copyFromPrevBtn" title="Copy habits from previous month">
+            📋 Copy from Previous Month
+          </button>
+          <button class="habit-stats-btn" id="viewStatsBtn" title="View monthly statistics">
+            📊 Monthly Stats
+          </button>
+        </div>
+
+        <!-- Table -->
+        <div class="habit-table-wrapper">
+          <table class="habit-table" id="habitTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Daily Progress Row -->
+        <div class="habit-daily-progress" id="dailyProgress"></div>
+      </div>
+
+      <!-- Overview Section -->
+      <div class="habit-overview-section">
+        <div class="habit-overview-card">
+          <h3 class="habit-overview-title">OVERVIEW DAILY PROGRESS</h3>
+          <div class="habit-donut-container">
+            <canvas class="habit-chart-canvas habit-donut-canvas" id="donutChart"></canvas>
+            <div class="habit-donut-center" id="donutCenter"></div>
+          </div>
+          <div class="habit-donut-legend" id="donutLegend"></div>
+        </div>
+        <div class="habit-overview-card">
+          <h3 class="habit-overview-title">TOP 10 DAILY HABITS</h3>
+          <div class="habit-top-habits" id="topHabitsList"></div>
+        </div>
+      </div>
+
+      <!-- Weekly Progress Section -->
+      <div class="habit-weekly-progress" id="weeklyProgress"></div>
+
+      <!-- Graphs Section -->
+      <div class="habit-graphs">
+        <div class="habit-graph-card habit-line-graph-card">
+          <h3 class="habit-line-graph-title">WEEKLY PROGRESS BY GRAPH</h3>
+          <div class="habit-chart-container">
+            <canvas class="habit-chart-canvas" id="areaChart"></canvas>
+          </div>
+        </div>
+        <div class="habit-graph-card">
+          <h3 class="habit-graph-title">Analysis</h3>
+          <div class="habit-analysis-list" id="analysisList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copy from Previous Month Modal -->
+  <div class="habit-modal-overlay" id="copyModal" style="display: none;">
+    <div class="habit-modal">
+      <div class="habit-modal-header">
+        <h3 class="habit-modal-title">Copy Habits from Previous Month</h3>
+        <button class="habit-modal-close" onclick="closeCopyModal()">×</button>
+      </div>
+      <div class="habit-modal-body">
+        <div class="habit-copy-info" id="copyMonthInfo"></div>
+        <div class="habit-copy-list" id="copyHabitsList"></div>
+        <div class="habit-modal-actions">
+          <button class="habit-btn-secondary" onclick="closeCopyModal()">Cancel</button>
+          <button class="habit-btn-primary" id="confirmCopyBtn">Copy Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Stats Modal -->
+  <div class="habit-modal-overlay" id="statsModal" style="display: none;">
+    <div class="habit-modal habit-modal-large">
+      <div class="habit-modal-header">
+        <h3 class="habit-modal-title">Monthly Statistics</h3>
+        <button class="habit-modal-close" onclick="closeStatsModal()">×</button>
+      </div>
+      <div class="habit-modal-body">
+        <div class="habit-stats-container">
+          <div class="habit-stats-grid" id="statsGrid"></div>
+          <div class="habit-year-overview" id="yearOverview"></div>
+        </div>
+        <div class="habit-modal-actions">
+          <button class="habit-btn-primary" onclick="closeStatsModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentDate = new Date();
+    let habits = [];
+    let habitData = {}; // { habitId: { [dateKey]: true/false } }
+
+    // Initialize
+    function init() {
+      // Set initial month/year display
+      document.getElementById('currentMonth').textContent = getMonthAndYear(currentDate.getFullYear(), currentDate.getMonth());
+
+      loadData();
+      renderTable();
+      updateSummary();
+      renderDailyProgress();
+      renderGraphs();
+
+      // Event listeners
+      document.getElementById('addHabitBtn').addEventListener('click', addHabit);
+      document.getElementById('newHabitInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addHabit();
+      });
+      document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+      document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+      document.getElementById('copyFromPrevBtn').addEventListener('click', openCopyModal);
+      document.getElementById('viewStatsBtn').addEventListener('click', openStatsModal);
+      document.getElementById('confirmCopyBtn').addEventListener('click', confirmCopyHabits);
+    }
+
+    // Date utilities
+    function getDateKey(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function getDaysInMonth(year, month) {
+      return new Date(year, month + 1, 0).getDate();
+    }
+
+    function getFirstDayOfMonth(year, month) {
+      return new Date(year, month, 1).getDay();
+    }
+
+    function getMonthName(month) {
+      const names = ['January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'];
+      return names[month];
+    }
+
+    function getMonthAndYear(year, month) {
+      return `${getMonthName(month)} ${year}`;
+    }
+
+    function getDayName(day) {
+      const names = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+      return names[day];
+    }
+
+    // Data persistence
+    function getStorageKey() {
+      return `habits_${currentDate.getFullYear()}_${currentDate.getMonth()}`;
+    }
+
+    function saveData() {
+      const data = {
+        habits: habits,
+        habitData: habitData
+      };
+      localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    }
+
+    function loadData() {
+      const stored = localStorage.getItem(getStorageKey());
+      if (stored) {
+        const data = JSON.parse(stored);
+        habits = data.habits || [];
+        habitData = data.habitData || {};
+
+        // Initialize order for habits that don't have it
+        habits.forEach((habit, index) => {
+          if (habit.order === undefined) {
+            habit.order = index;
+          }
+        });
+      } else {
+        habits = [];
+        habitData = {};
+      }
+    }
+
+    // Month navigation
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      loadData();
+      renderTable();
+      updateSummary();
+      renderDailyProgress();
+      renderGraphs();
+      document.getElementById('currentMonth').textContent = getMonthAndYear(currentDate.getFullYear(), currentDate.getMonth());
+    }
+
+    // Habit management
+    function addHabit() {
+      const input = document.getElementById('newHabitInput');
+      const name = input.value.trim();
+      if (!name) return;
+
+      const habitId = Date.now().toString();
+      // Set order to be at the end
+      const maxOrder = habits.length > 0 ? Math.max(...habits.map(h => h.order || 0)) : -1;
+      habits.push({ id: habitId, name: name, order: maxOrder + 1 });
+      habitData[habitId] = {};
+
+      input.value = '';
+      saveData();
+      renderTable();
+      updateSummary();
+      renderGraphs();
+    }
+
+    function deleteHabit(habitId) {
+      if (!confirm('Delete this habit?')) return;
+
+      habits = habits.filter(h => h.id !== habitId);
+      delete habitData[habitId];
+      saveData();
+      renderTable();
+      updateSummary();
+      renderDailyProgress();
+      renderGraphs();
+    }
+
+    function toggleHabit(habitId, dateKey) {
+      if (!habitData[habitId]) habitData[habitId] = {};
+      habitData[habitId][dateKey] = !habitData[habitId][dateKey];
+      saveData();
+      updateSummary();
+      renderDailyProgress();
+      renderGraphs();
+    }
+
+    // Table rendering
+    function renderTable() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const firstDay = getFirstDayOfMonth(year, month);
+
+      // Build header
+      const thead = document.getElementById('tableHead');
+      thead.innerHTML = '';
+
+      // Habit name column header
+      const nameHeader = document.createElement('th');
+      nameHeader.className = 'habit-name-col';
+      nameHeader.textContent = 'My Habits';
+      thead.appendChild(nameHeader);
+
+      // Group days by weeks
+      const weeks = [];
+      let currentWeek = [];
+      let dayNum = 1;
+
+      // Add empty cells for days before month starts
+      for (let i = 0; i < firstDay; i++) {
+        currentWeek.push(null);
+      }
+
+      while (dayNum <= daysInMonth) {
+        const date = new Date(year, month, dayNum);
+        currentWeek.push({ day: dayNum, date: date, dayOfWeek: date.getDay() });
+
+        if (currentWeek.length === 7 || dayNum === daysInMonth) {
+          weeks.push([...currentWeek]);
+          currentWeek = [];
+        }
+        dayNum++;
+      }
+
+      // Render week headers and day headers
+      weeks.forEach((week, weekIndex) => {
+        const weekHeader = document.createElement('th');
+        weekHeader.className = 'week-header';
+        weekHeader.colSpan = week.length;
+        weekHeader.textContent = `Week ${weekIndex + 1}`;
+        thead.appendChild(weekHeader);
+      });
+
+      const dayRow = document.createElement('tr');
+      dayRow.appendChild(document.createElement('th')); // Empty cell for habit names
+
+      weeks.forEach(week => {
+        week.forEach(day => {
+          if (day) {
+            const dayHeader = document.createElement('th');
+            dayHeader.className = 'day-header';
+            dayHeader.innerHTML = `
+              <div>${getDayName(day.dayOfWeek)}</div>
+              <div class="day-number">${day.day}</div>
+            `;
+            dayRow.appendChild(dayHeader);
+          }
+        });
+      });
+
+      thead.appendChild(dayRow);
+
+      // Build body - sort habits by order
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      // Sort habits by order (if exists), otherwise maintain current order
+      const sortedHabits = [...habits].sort((a, b) => {
+        const orderA = a.order !== undefined ? a.order : Infinity;
+        const orderB = b.order !== undefined ? b.order : Infinity;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        // Fallback to creation order
+        return (a.id || '').localeCompare(b.id || '');
+      });
+
+      sortedHabits.forEach((habit, index) => {
+        const row = document.createElement('tr');
+        row.draggable = true;
+        row.dataset.habitId = habit.id;
+        row.dataset.habitOrder = habit.order !== undefined ? habit.order : index;
+
+        // Habit name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = 'habit-name-cell';
+        nameCell.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="cursor: move; user-select: none; color: var(--text-secondary); font-size: 1.2rem; margin-right: 0.25rem;" title="Drag to reorder">☰</span>
+            <button class="habit-delete-btn" onclick="deleteHabit('${habit.id}')" aria-label="Delete habit">×</button>
+            <span>${habit.name}</span>
+          </div>
+        `;
+        row.appendChild(nameCell);
+
+        // Checkbox cells
+        weeks.forEach(week => {
+          week.forEach(day => {
+            if (day) {
+              const cell = document.createElement('td');
+              const dateKey = getDateKey(day.date);
+              const checked = habitData[habit.id] && habitData[habit.id][dateKey];
+              
+              // Check if this is today's date
+              const today = new Date();
+              const isToday = day.date.getDate() === today.getDate() &&
+                             day.date.getMonth() === today.getMonth() &&
+                             day.date.getFullYear() === today.getFullYear();
+
+              const checkbox = document.createElement('div');
+              checkbox.className = `habit-checkbox ${checked ? 'checked' : ''} ${isToday ? 'today' : ''}`;
+              checkbox.onclick = () => {
+                toggleHabit(habit.id, dateKey);
+                checkbox.classList.toggle('checked');
+              };
+
+              cell.appendChild(checkbox);
+              row.appendChild(cell);
+            }
+          });
+        });
+
+        tbody.appendChild(row);
+      });
+
+      // Initialize drag and drop after rendering
+      initHabitDragAndDrop();
+    }
+
+    // Drag and drop functionality for reordering habits
+    let draggedHabitRow = null;
+    let draggedOverHabitRow = null;
+
+    function initHabitDragAndDrop() {
+      const habitRows = document.querySelectorAll('#tableBody tr[draggable="true"]');
+
+      habitRows.forEach(row => {
+        row.addEventListener('dragstart', handleHabitDragStart);
+        row.addEventListener('dragover', handleHabitDragOver);
+        row.addEventListener('dragenter', handleHabitDragEnter);
+        row.addEventListener('dragleave', handleHabitDragLeave);
+        row.addEventListener('drop', handleHabitDrop);
+        row.addEventListener('dragend', handleHabitDragEnd);
+
+        // Prevent drag on delete button
+        const deleteBtn = row.querySelector('.habit-delete-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+          });
+          deleteBtn.draggable = false;
+        }
+      });
+    }
+
+    function handleHabitDragStart(e) {
+      draggedHabitRow = e.target.closest('tr');
+      if (!draggedHabitRow) return;
+      draggedHabitRow.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', draggedHabitRow.outerHTML);
+    }
+
+    function handleHabitDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleHabitDragEnter(e) {
+      const target = e.target.closest('tr');
+      if (target && target !== draggedHabitRow && target.draggable) {
+        draggedOverHabitRow = target;
+        target.classList.add('drag-over');
+      }
+    }
+
+    function handleHabitDragLeave(e) {
+      const target = e.target.closest('tr');
+      if (target) {
+        target.classList.remove('drag-over');
+      }
+    }
+
+    function handleHabitDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+
+      const target = e.target.closest('tr');
+      if (!target || !draggedHabitRow || target === draggedHabitRow) {
+        return false;
+      }
+
+      const tbody = document.getElementById('tableBody');
+      const allRows = Array.from(tbody.querySelectorAll('tr[draggable="true"]'));
+      const draggedIndex = allRows.indexOf(draggedHabitRow);
+      const targetIndex = allRows.indexOf(target);
+
+      if (draggedIndex === -1 || targetIndex === -1) {
+        return false;
+      }
+
+      // Reorder in DOM
+      if (draggedIndex < targetIndex) {
+        tbody.insertBefore(draggedHabitRow, target.nextSibling);
+      } else {
+        tbody.insertBefore(draggedHabitRow, target);
+      }
+
+      // Update order in habit data
+      const reorderedRows = Array.from(tbody.querySelectorAll('tr[draggable="true"]'));
+      reorderedRows.forEach((row, index) => {
+        const habitId = row.dataset.habitId;
+        const habit = habits.find(h => h.id === habitId);
+        if (habit) {
+          habit.order = index;
+        }
+      });
+
+      saveData();
+      // Reload to ensure consistency
+      const stored = localStorage.getItem(getStorageKey());
+      if (stored) {
+        const data = JSON.parse(stored);
+        habits = data.habits || habits;
+      }
+
+      return false;
+    }
+
+    function handleHabitDragEnd(e) {
+      const row = e.target.closest('tr');
+      if (row) {
+        row.classList.remove('dragging');
+      }
+
+      // Remove drag-over class from all rows
+      document.querySelectorAll('#tableBody tr').forEach(el => {
+        el.classList.remove('drag-over');
+      });
+
+      draggedHabitRow = null;
+      draggedOverHabitRow = null;
+    }
+
+    // Summary updates
+    function updateSummary() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const totalPossible = habits.length * daysInMonth;
+      let completed = 0;
+
+      habits.forEach(habit => {
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = getDateKey(date);
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            completed++;
+          }
+        }
+      });
+
+      document.getElementById('habitCount').textContent = habits.length;
+      document.getElementById('completedCount').textContent = completed;
+
+      const percent = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0;
+      document.getElementById('progressFill').style.width = `${percent}%`;
+      document.getElementById('progressText').textContent = `${percent}%`;
+    }
+
+    // Daily progress
+    function renderDailyProgress() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const container = document.getElementById('dailyProgress');
+      container.innerHTML = '';
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateKey = getDateKey(date);
+        let done = 0;
+        let total = habits.length;
+
+        habits.forEach(habit => {
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            done++;
+          }
+        });
+
+        const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+        const notDone = total - done;
+
+        const item = document.createElement('div');
+        item.className = 'habit-daily-item';
+        item.innerHTML = `
+          <div class="habit-daily-date">${getDayName(date.getDay())} ${day}</div>
+          <div class="habit-daily-percent">${percent}%</div>
+          <div class="habit-daily-stats">Done: ${done} / Not: ${notDone}</div>
+        `;
+        container.appendChild(item);
+      }
+    }
+
+    // Graphs
+    function renderGraphs() {
+      renderAreaChart();
+      renderAnalysis();
+      renderDonutChart();
+      renderTopHabits();
+      renderWeeklyProgress();
+    }
+
+    function renderAreaChart() {
+      const canvas = document.getElementById('areaChart');
+      const ctx = canvas.getContext('2d');
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+
+      // Calculate daily percentages
+      const data = [];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateKey = getDateKey(date);
+        let done = 0;
+        const total = habits.length;
+
+        habits.forEach(habit => {
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            done++;
+          }
+        });
+
+        const percent = total > 0 ? (done / total) * 100 : 0;
+        data.push(percent);
+      }
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      if (data.length === 0) return;
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = (height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Draw labels
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '12px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('100%', width - 10, 15);
+      ctx.fillText('75%', width - 10, height / 4 + 15);
+      ctx.fillText('50%', width - 10, height / 2 + 15);
+      ctx.fillText('25%', width - 10, (height * 3) / 4 + 15);
+      ctx.fillText('0%', width - 10, height - 5);
+
+      // Draw area chart
+      if (data.length > 0) {
+        const padding = 40;
+        const chartWidth = width - padding * 2;
+        const chartHeight = height - padding * 2;
+        const stepX = chartWidth / (data.length - 1 || 1);
+
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+        gradient.addColorStop(0, 'rgba(52, 199, 89, 0.3)');
+        gradient.addColorStop(1, 'rgba(52, 199, 89, 0.05)');
+
+        // Draw area
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding);
+
+        data.forEach((value, index) => {
+          const x = padding + index * stepX;
+          const y = height - padding - (value / 100) * chartHeight;
+          ctx.lineTo(x, y);
+        });
+
+        ctx.lineTo(padding + (data.length - 1) * stepX, height - padding);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw line
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding - (data[0] / 100) * chartHeight);
+        data.forEach((value, index) => {
+          if (index > 0) {
+            const x = padding + index * stepX;
+            const y = height - padding - (value / 100) * chartHeight;
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.strokeStyle = '#34c759';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+
+        // Draw data points
+        data.forEach((value, index) => {
+          const x = padding + index * stepX;
+          const y = height - padding - (value / 100) * chartHeight;
+          
+          // Outer circle (glow effect)
+          ctx.beginPath();
+          ctx.arc(x, y, 6, 0, 2 * Math.PI);
+          ctx.fillStyle = 'rgba(52, 199, 89, 0.3)';
+          ctx.fill();
+          
+          // Inner circle
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, 2 * Math.PI);
+          ctx.fillStyle = '#34c759';
+          ctx.fill();
+          
+          // Center dot
+          ctx.beginPath();
+          ctx.arc(x, y, 2, 0, 2 * Math.PI);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+        });
+      }
+    }
+
+    function renderAnalysis() {
+      const container = document.getElementById('analysisList');
+      container.innerHTML = '';
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const goal = daysInMonth;
+
+      habits.forEach(habit => {
+        let actual = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = getDateKey(date);
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            actual++;
+          }
+        }
+
+        const percent = goal > 0 ? Math.round((actual / goal) * 100) : 0;
+
+        const item = document.createElement('div');
+        item.className = 'habit-analysis-item';
+        item.innerHTML = `
+          <div class="habit-analysis-header">
+            <span class="habit-analysis-name">${habit.name}</span>
+            <div class="habit-analysis-numbers">
+              <span>Goal: ${goal}</span>
+              <span>Actual: ${actual}</span>
+            </div>
+          </div>
+          <div class="habit-analysis-bar-container">
+            <div class="habit-analysis-bar" style="width: ${percent}%"></div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Donut Chart
+    function renderDonutChart() {
+      const canvas = document.getElementById('donutChart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      canvas.width = width;
+      canvas.height = height;
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const totalPossible = habits.length * daysInMonth;
+      let completed = 0;
+
+      habits.forEach(habit => {
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = getDateKey(date);
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            completed++;
+          }
+        }
+      });
+
+      const left = totalPossible - completed;
+      const completedPercent = totalPossible > 0 ? (completed / totalPossible) * 100 : 0;
+      const leftPercent = totalPossible > 0 ? (left / totalPossible) * 100 : 0;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(width, height) / 2 - 10;
+      const innerRadius = radius * 0.6;
+
+      // Draw completed (green)
+      if (completedPercent > 0) {
+        const startAngle = -Math.PI / 2;
+        const endAngle = startAngle + (completedPercent / 100) * 2 * Math.PI;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = '#34c759';
+        ctx.fill();
+      }
+
+      // Draw left (yellow/orange)
+      if (leftPercent > 0) {
+        const startAngle = -Math.PI / 2 + (completedPercent / 100) * 2 * Math.PI;
+        const endAngle = startAngle + (leftPercent / 100) * 2 * Math.PI;
+        
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = '#ff9500';
+        ctx.fill();
+      }
+
+      // Update center text
+      const centerDiv = document.getElementById('donutCenter');
+      if (centerDiv) {
+        centerDiv.innerHTML = `
+          <div class="habit-donut-label">COMPLETED</div>
+          <div class="habit-donut-value">${completedPercent.toFixed(1)}%</div>
+        `;
+      }
+
+      // Update legend
+      const legend = document.getElementById('donutLegend');
+      if (legend) {
+        legend.innerHTML = `
+          <div class="habit-donut-legend-item">
+            <div class="habit-donut-legend-color" style="background: #ff9500;"></div>
+            <div class="habit-donut-legend-text">LEFT ${leftPercent.toFixed(1)}%</div>
+          </div>
+          <div class="habit-donut-legend-item">
+            <div class="habit-donut-legend-color" style="background: #34c759;"></div>
+            <div class="habit-donut-legend-text">COMPLETED ${completedPercent.toFixed(1)}%</div>
+          </div>
+        `;
+      }
+    }
+
+    // Top 10 Habits
+    function renderTopHabits() {
+      const container = document.getElementById('topHabitsList');
+      if (!container) return;
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const goal = daysInMonth;
+
+      // Calculate completion percentage for each habit
+      const habitStats = habits.map(habit => {
+        let actual = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = getDateKey(date);
+          if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+            actual++;
+          }
+        }
+        const percent = goal > 0 ? Math.round((actual / goal) * 100) : 0;
+        return { habit, percent, actual };
+      });
+
+      // Sort by percentage (descending) and take top 10
+      habitStats.sort((a, b) => b.percent - a.percent);
+      const topHabits = habitStats.slice(0, 10);
+
+      container.innerHTML = '';
+
+      if (topHabits.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 2rem;">No habits tracked yet</div>';
+        return;
+      }
+
+      topHabits.forEach((item, index) => {
+        const habitItem = document.createElement('div');
+        habitItem.className = 'habit-top-habit-item';
+        habitItem.innerHTML = `
+          <div class="habit-top-habit-number">${index + 1}.</div>
+          <div class="habit-top-habit-name">${item.habit.name}</div>
+          <div class="habit-top-habit-percent">${item.percent}%</div>
+        `;
+        container.appendChild(habitItem);
+      });
+    }
+
+    // Weekly Progress Bars
+    function renderWeeklyProgress() {
+      const container = document.getElementById('weeklyProgress');
+      if (!container) return;
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const firstDay = getFirstDayOfMonth(year, month);
+
+      // Group days by weeks
+      const weeks = [];
+      let currentWeek = [];
+      let dayNum = 1;
+
+      // Add empty cells for days before month starts
+      for (let i = 0; i < firstDay; i++) {
+        currentWeek.push(null);
+      }
+
+      while (dayNum <= daysInMonth) {
+        const date = new Date(year, month, dayNum);
+        currentWeek.push({ day: dayNum, date: date, dayOfWeek: date.getDay() });
+
+        if (currentWeek.length === 7 || dayNum === daysInMonth) {
+          weeks.push([...currentWeek]);
+          currentWeek = [];
+        }
+        dayNum++;
+      }
+
+      container.innerHTML = '';
+
+      weeks.forEach((week, weekIndex) => {
+        // Calculate stats for this week
+        let weekCompleted = 0;
+        let weekTotal = 0;
+        const weekDays = week.filter(d => d !== null);
+        const weekDates = weekDays.map(d => d.date);
+        const maxBarHeight = 100;
+
+        weekDays.forEach(day => {
+          const dateKey = getDateKey(day.date);
+          habits.forEach(habit => {
+            weekTotal++;
+            if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+              weekCompleted++;
+            }
+          });
+        });
+
+        const weekPercent = weekTotal > 0 ? Math.round((weekCompleted / weekTotal) * 100) : 0;
+        const goal = habits.length * weekDays.length;
+
+        // Get first and last dates
+        const firstDate = weekDays[0];
+        const lastDate = weekDays[weekDays.length - 1];
+        const dateRange = `${firstDate.day}${getDayName(firstDate.dayOfWeek).substring(0, 1)} - ${lastDate.day}${getDayName(lastDate.dayOfWeek).substring(0, 1)}`;
+
+        // Calculate daily values for bars
+        const dailyValues = weekDays.map(day => {
+          const dateKey = getDateKey(day.date);
+          let done = 0;
+          habits.forEach(habit => {
+            if (habitData[habit.id] && habitData[habit.id][dateKey]) {
+              done++;
+            }
+          });
+          return { value: done, max: habits.length, percent: habits.length > 0 ? (done / habits.length) * 100 : 0 };
+        });
+
+        const weekCard = document.createElement('div');
+        weekCard.className = 'habit-week-card';
+        weekCard.innerHTML = `
+          <div class="habit-week-header">
+            <div class="habit-week-title">WEEK ${weekIndex + 1}</div>
+            <div class="habit-week-dates">${dateRange}</div>
+          </div>
+          <div class="habit-week-days">
+            ${weekDays.map(day => `<div class="habit-week-day">${getDayName(day.dayOfWeek)} ${day.day}</div>`).join('')}
+          </div>
+          <div class="habit-week-bars">
+            ${dailyValues.map((day, idx) => `
+              <div class="habit-week-bar" style="height: ${(day.percent / 100) * maxBarHeight}px;">
+                <div class="habit-week-bar-value">${day.value}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="habit-week-stats">
+            <div class="habit-week-completed">${weekCompleted}/${goal}</div>
+            <div class="habit-week-percent">${weekPercent}%</div>
+          </div>
+        `;
+        container.appendChild(weekCard);
+      });
+    }
+
+    // Copy from Previous Month
+    function getPreviousMonthKey() {
+      const prevDate = new Date(currentDate);
+      prevDate.setMonth(prevDate.getMonth() - 1);
+      return `habits_${prevDate.getFullYear()}_${prevDate.getMonth()}`;
+    }
+
+    function openCopyModal() {
+      const prevKey = getPreviousMonthKey();
+      const stored = localStorage.getItem(prevKey);
+
+      if (!stored) {
+        alert('No habits found in the previous month.');
+        return;
+      }
+
+      const prevData = JSON.parse(stored);
+      const prevHabits = prevData.habits || [];
+      const prevDate = new Date(currentDate);
+      prevDate.setMonth(prevDate.getMonth() - 1);
+
+      if (prevHabits.length === 0) {
+        alert('No habits found in the previous month.');
+        return;
+      }
+
+      document.getElementById('copyMonthInfo').textContent =
+        `Select habits to copy from ${getMonthName(prevDate.getMonth())} ${prevDate.getFullYear()}`;
+
+      const list = document.getElementById('copyHabitsList');
+      list.innerHTML = '';
+      list.dataset.prevHabits = JSON.stringify(prevHabits);
+
+      prevHabits.forEach(habit => {
+        const item = document.createElement('div');
+        item.className = 'habit-copy-item';
+        item.innerHTML = `
+          <div class="habit-copy-checkbox checked" data-habit-id="${habit.id}"></div>
+          <div class="habit-copy-name">${habit.name}</div>
+        `;
+        item.querySelector('.habit-copy-checkbox').addEventListener('click', function () {
+          this.classList.toggle('checked');
+        });
+        list.appendChild(item);
+      });
+
+      document.getElementById('copyModal').style.display = 'flex';
+    }
+
+    function closeCopyModal() {
+      document.getElementById('copyModal').style.display = 'none';
+    }
+
+    function confirmCopyHabits() {
+      const list = document.getElementById('copyHabitsList');
+      const checkedBoxes = list.querySelectorAll('.habit-copy-checkbox.checked');
+
+      if (checkedBoxes.length === 0) {
+        alert('Please select at least one habit to copy.');
+        return;
+      }
+
+      const prevHabits = JSON.parse(list.dataset.prevHabits);
+      const checkedIds = Array.from(checkedBoxes).map(box => box.dataset.habitId);
+      const habitsToCopy = prevHabits.filter(h => checkedIds.includes(h.id));
+
+      let copiedCount = 0;
+
+      // Add habits that don't already exist
+      habitsToCopy.forEach(prevHabit => {
+        const exists = habits.some(h => h.name === prevHabit.name);
+        if (!exists) {
+          const newHabitId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          habits.push({ id: newHabitId, name: prevHabit.name });
+          habitData[newHabitId] = {};
+          copiedCount++;
+        }
+      });
+
+      if (copiedCount === 0) {
+        alert('All selected habits already exist in this month.');
+      } else {
+        saveData();
+        renderTable();
+        updateSummary();
+        renderGraphs();
+        alert(`Successfully copied ${copiedCount} habit(s)!`);
+      }
+
+      closeCopyModal();
+    }
+
+    // Monthly Statistics
+    function openStatsModal() {
+      renderMonthlyStats();
+      document.getElementById('statsModal').style.display = 'flex';
+    }
+
+    function closeStatsModal() {
+      document.getElementById('statsModal').style.display = 'none';
+    }
+
+    function renderMonthlyStats() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const daysInMonth = getDaysInMonth(year, month);
+      const totalPossible = habits.length * daysInMonth;
+
+      let completed = 0;
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let bestDay = 0;
+      let bestDayDate = '';
+      const dailyStats = {};
+
+      // Calculate statistics
+      habits.forEach(habit => {
+        let habitLongestStreak = 0;
+        let tempStreak = 0;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(year, month, day);
+          const dateKey = getDateKey(date);
+          const isDone = habitData[habit.id] && habitData[habit.id][dateKey];
+
+          if (isDone) {
+            completed++;
+            tempStreak++;
+            habitLongestStreak = Math.max(habitLongestStreak, tempStreak);
+          } else {
+            tempStreak = 0;
+          }
+
+          if (!dailyStats[dateKey]) {
+            dailyStats[dateKey] = { done: 0, total: 0 };
+          }
+          dailyStats[dateKey].total++;
+          if (isDone) dailyStats[dateKey].done++;
+        }
+
+        longestStreak = Math.max(longestStreak, habitLongestStreak);
+      });
+
+      // Find best day
+      Object.keys(dailyStats).forEach(dateKey => {
+        const percent = (dailyStats[dateKey].done / dailyStats[dateKey].total) * 100;
+        if (percent > bestDay) {
+          bestDay = percent;
+          bestDayDate = dateKey;
+        }
+      });
+
+      const percent = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0;
+
+      // Calculate current streak (days from end of month going backwards)
+      let streakDays = 0;
+      for (let day = daysInMonth; day >= 1; day--) {
+        const date = new Date(year, month, day);
+        const dateKey = getDateKey(date);
+        let allDone = true;
+
+        habits.forEach(habit => {
+          if (!habitData[habit.id] || !habitData[habit.id][dateKey]) {
+            allDone = false;
+          }
+        });
+
+        if (allDone && habits.length > 0) {
+          streakDays++;
+        } else {
+          break;
+        }
+      }
+      currentStreak = streakDays;
+
+      // Render stats grid
+      const grid = document.getElementById('statsGrid');
+      grid.innerHTML = `
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Completion Rate</div>
+          <div class="habit-stat-value">${percent}%</div>
+        </div>
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Total Completed</div>
+          <div class="habit-stat-value">${completed}</div>
+        </div>
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Current Streak</div>
+          <div class="habit-stat-value">${currentStreak} days</div>
+        </div>
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Longest Streak</div>
+          <div class="habit-stat-value">${longestStreak} days</div>
+        </div>
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Best Day</div>
+          <div class="habit-stat-value">${bestDay.toFixed(0)}%</div>
+        </div>
+        <div class="habit-stat-card">
+          <div class="habit-stat-label">Habits Tracked</div>
+          <div class="habit-stat-value">${habits.length}</div>
+        </div>
+      `;
+
+      // Render year overview
+      renderYearOverview();
+    }
+
+    function renderYearOverview() {
+      const year = currentDate.getFullYear();
+      const container = document.getElementById('yearOverview');
+      container.innerHTML = `
+        <h4 class="habit-year-title">${year} Overview</h4>
+        <div class="habit-year-grid" id="yearGrid"></div>
+      `;
+
+      const grid = document.getElementById('yearGrid');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+      for (let m = 0; m < 12; m++) {
+        const monthKey = `habits_${year}_${m}`;
+        const stored = localStorage.getItem(monthKey);
+        let percent = 0;
+
+        if (stored) {
+          const data = JSON.parse(stored);
+          const monthHabits = data.habits || [];
+          const monthHabitData = data.habitData || {};
+          const daysInMonth = getDaysInMonth(year, m);
+          let completed = 0;
+          const totalPossible = monthHabits.length * daysInMonth;
+
+          monthHabits.forEach(habit => {
+            for (let day = 1; day <= daysInMonth; day++) {
+              const date = new Date(year, m, day);
+              const dateKey = getDateKey(date);
+              if (monthHabitData[habit.id] && monthHabitData[habit.id][dateKey]) {
+                completed++;
+              }
+            }
+          });
+
+          percent = totalPossible > 0 ? Math.round((completed / totalPossible) * 100) : 0;
+        }
+
+        const monthEl = document.createElement('div');
+        monthEl.className = `habit-year-month ${m === currentDate.getMonth() ? 'active' : ''}`;
+        monthEl.innerHTML = `
+          <div class="habit-year-month-name">${monthNames[m]}</div>
+          <div class="habit-year-month-value">${percent}%</div>
+        `;
+        monthEl.addEventListener('click', () => {
+          currentDate.setMonth(m);
+          loadData();
+          renderTable();
+          updateSummary();
+          renderDailyProgress();
+          renderGraphs();
+          document.getElementById('currentMonth').textContent = getMonthAndYear(year, m);
+          closeStatsModal();
+        });
+        grid.appendChild(monthEl);
+      }
+    }
+
+    // Make functions available globally
+    window.deleteHabit = deleteHabit;
+    window.closeCopyModal = closeCopyModal;
+    window.closeStatsModal = closeStatsModal;
+
+    // Handle window resize for graphs
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        renderGraphs();
+      }, 250);
+    });
+
+    // Close modals on overlay click (but not when clicking inside modal)
+    document.getElementById('copyModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'copyModal' || e.target.classList.contains('habit-modal-overlay')) {
+        closeCopyModal();
+      }
+    });
+
+    document.getElementById('statsModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'statsModal' || e.target.classList.contains('habit-modal-overlay')) {
+        closeStatsModal();
+      }
+    });
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('copyModal').style.display !== 'none') {
+          closeCopyModal();
+        }
+        if (document.getElementById('statsModal').style.display !== 'none') {
+          closeStatsModal();
+        }
+      }
+    });
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+</body>
+
+</html>

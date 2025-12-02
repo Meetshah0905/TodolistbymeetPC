@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day Planner</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .day-planner-page {
+      min-height: 100vh;
+      padding: 2rem;
+      background: var(--surface);
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(10, 132, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(52, 199, 89, 0.06) 0%, transparent 50%);
+    }
+
+    .day-planner-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Header Bar */
+    .day-planner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .day-planner-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .day-planner-date-nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .day-planner-date-btn {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .day-planner-date-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .day-planner-date-display {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .day-planner-summary {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .day-planner-summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .day-planner-summary-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .day-planner-summary-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Time Blocks Grid */
+    .day-planner-blocks {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    @media (max-width: 1200px) {
+      .day-planner-blocks {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Time Block Card */
+    .time-block-card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      min-height: 400px;
+    }
+
+    .time-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .time-block-title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .time-block-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .time-block-time {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .time-block-progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+      min-width: 150px;
+    }
+
+    .time-block-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .time-block-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34c759, #30d158);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
+    }
+
+    .time-block-stats {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Task List */
+    .time-block-tasks {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 200px;
+      max-height: 500px;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+
+    .time-block-task {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .time-block-task:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .time-block-task.done {
+      opacity: 0.6;
+    }
+
+    .time-block-task.cancelled {
+      opacity: 0.4;
+      text-decoration: line-through;
+    }
+
+    .time-block-task-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      margin-left: auto;
+    }
+
+    .time-block-task:hover .time-block-task-actions {
+      opacity: 1;
+    }
+
+    .time-block-task-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      transition: all 0.2s;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .time-block-task-action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .time-block-task-action-btn.delete:hover {
+      background: rgba(255, 69, 58, 0.2);
+      color: var(--danger);
+    }
+
+    .time-block-task-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      word-break: break-word;
+    }
+
+    .time-block-task-title[contenteditable="true"]:focus {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      padding: 0.25rem;
+      margin: -0.25rem;
+      outline: 2px solid rgba(10, 132, 255, 0.5);
+    }
+
+    .time-block-task-note {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      outline: none;
+      word-break: break-word;
+    }
+
+    .time-block-task-note[contenteditable="true"]:focus {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      padding: 0.25rem;
+      margin: -0.25rem;
+      outline: 2px solid rgba(10, 132, 255, 0.5);
+    }
+
+    .time-block-task-checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all 0.2s;
+    }
+
+    .time-block-task-checkbox:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .time-block-task-checkbox.checked {
+      background: linear-gradient(135deg, #34c759, #30d158);
+      border-color: #34c759;
+      box-shadow: 0 0 10px rgba(52, 199, 89, 0.5);
+    }
+
+    .time-block-task-checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .time-block-task-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .time-block-task-time {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Add Task Section */
+    .time-block-add {
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .time-block-add-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 0.75rem;
+    }
+
+    .time-block-add-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: var(--text);
+    }
+
+    .time-block-add-form {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .time-block-add-form.active {
+      display: flex;
+    }
+
+    .time-block-form-input {
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .time-block-form-input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .time-block-form-time {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .time-block-form-time input {
+      flex: 1;
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .time-block-form-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .time-block-form-btn {
+      flex: 1;
+      padding: 0.75rem;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .time-block-form-btn-primary {
+      background: linear-gradient(135deg, #0a84ff, #0071e3);
+      color: white;
+      box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+    }
+
+    .time-block-form-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(10, 132, 255, 0.4);
+    }
+
+    .time-block-form-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .time-block-form-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Daily Summary Bar */
+    .day-planner-summary-bar {
+      padding: 1.5rem 2rem;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .day-planner-summary-bar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .day-planner-summary-bar-items {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .day-planner-summary-bar-progress {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .day-planner-summary-bar-progress-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .day-planner-summary-bar-progress-bar {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .day-planner-summary-bar-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #34c759, #30d158);
+      border-radius: 6px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(52, 199, 89, 0.5);
+    }
+
+    /* Modal */
+    .day-planner-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .day-planner-modal-overlay.active {
+      display: flex;
+    }
+
+    .day-planner-modal {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .day-planner-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .day-planner-modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .day-planner-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 2rem;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius);
+      transition: all 0.2s;
+    }
+
+    .day-planner-modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .day-planner-modal-body {
+      padding: 1.5rem;
+    }
+
+    .day-planner-modal-task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    .day-planner-modal-task {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .day-planner-modal-task:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .day-planner-modal-task-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .day-planner-modal-task-checkbox.checked {
+      background: #34c759;
+      border-color: #34c759;
+    }
+
+    .day-planner-modal-task-checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .day-planner-modal-task-content {
+      flex: 1;
+    }
+
+    .day-planner-modal-task-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .day-planner-modal-task-note {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .day-planner-modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    .day-planner-modal-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .day-planner-modal-btn-primary {
+      background: linear-gradient(135deg, #0a84ff, #0071e3);
+      color: white;
+    }
+
+    .day-planner-modal-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(10, 132, 255, 0.4);
+    }
+
+    /* Move Block Modal */
+    .day-planner-move-block-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(30px) saturate(180%);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      padding: 1.5rem;
+      z-index: 1001;
+      display: none;
+      min-width: 300px;
+    }
+
+    .day-planner-move-block-modal.active {
+      display: block;
+    }
+
+    .day-planner-move-block-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    .day-planner-move-block-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .day-planner-move-block-option {
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .day-planner-move-block-option:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .day-planner-move-block-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .day-planner-move-block-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .day-planner-move-block-btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .day-planner-move-block-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="day-planner-page">
+    <div class="header">
+      <div class="header-left">
+        <h1 class="page-title">Day Planner</h1>
+      </div>
+      <div class="header-right">
+        <nav class="primary-nav" id="primaryNav" data-nav-menu>
+          <a href="index.html" class="btn-ghost" style="text-decoration: none; color: inherit;">To-Do List</a>
+          <a href="habit-tracker.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Habit
+            Tracker</a>
+          <a href="matrix.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Matrix View</a>
+          <a href="calendar.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Calendar View</a>
+          <a href="motivation.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Motivation 🕙</a>
+          <a href="goal-countdown.html" class="btn-ghost" style="text-decoration: none; color: inherit;">Goal
+            Countdown</a>
+
+        </nav>
+        <div class="header-actions">
+          <!-- Global Music Controls (shown when music is playing) -->
+
+        </div>
+      </div>
+    </div>
+
+    <div class="day-planner-container">
+      <!-- Header Bar -->
+      <div class="day-planner-header">
+        <h2 class="day-planner-title">Day Planner</h2>
+        <div class="day-planner-date-nav">
+          <button class="day-planner-date-btn" id="prevDay">← Previous</button>
+          <button class="day-planner-date-btn" id="todayBtn">Today</button>
+          <button class="day-planner-date-btn" id="nextDay">Next →</button>
+          <div class="day-planner-date-display" id="currentDateDisplay"></div>
+        </div>
+        <div class="day-planner-summary">
+          <div class="day-planner-summary-item">
+            <span class="day-planner-summary-label">Tasks Today</span>
+            <span class="day-planner-summary-value" id="totalTasksCount">0</span>
+          </div>
+          <div class="day-planner-summary-item">
+            <span class="day-planner-summary-label">Estimated Time</span>
+            <span class="day-planner-summary-value" id="totalEstimatedTime">0h 0m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Blocks -->
+      <div class="day-planner-blocks">
+        <!-- Morning Block -->
+        <div class="time-block-card" data-block="morning">
+          <div class="time-block-header">
+            <div class="time-block-title-section">
+              <h3 class="time-block-title">Morning</h3>
+              <div class="time-block-time">6:00 – 12:00</div>
+            </div>
+            <div class="time-block-progress-section">
+              <div class="time-block-progress-bar">
+                <div class="time-block-progress-fill" data-progress="0" style="width: 0%"></div>
+              </div>
+              <div class="time-block-stats" data-stats="0 / 0 tasks done · 0h 0m scheduled"></div>
+            </div>
+          </div>
+          <div class="time-block-tasks" id="morningTasks"></div>
+          <div class="time-block-add">
+            <button class="time-block-add-btn" onclick="toggleAddForm('morning')">+ Add Task to Morning</button>
+            <button class="time-block-add-btn" onclick="openAddFromListModal('morning')">+ Add from List</button>
+            <div class="time-block-add-form" id="morningForm">
+              <input type="text" class="time-block-form-input" placeholder="Task title (required)" data-block="morning"
+                data-field="title">
+              <input type="text" class="time-block-form-input" placeholder="Note (optional)" data-block="morning"
+                data-field="note">
+              <div class="time-block-form-time">
+                <input type="number" min="0" max="23" placeholder="H" data-block="morning" data-field="hours">
+                <span style="color: var(--text-secondary);">:</span>
+                <input type="number" min="0" max="59" placeholder="M" data-block="morning" data-field="minutes">
+              </div>
+              <div class="time-block-form-actions">
+                <button class="time-block-form-btn time-block-form-btn-secondary"
+                  onclick="cancelAddForm('morning')">Cancel</button>
+                <button class="time-block-form-btn time-block-form-btn-primary" onclick="addTaskToBlock('morning')">Add
+                  Task</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Afternoon Block -->
+        <div class="time-block-card" data-block="afternoon">
+          <div class="time-block-header">
+            <div class="time-block-title-section">
+              <h3 class="time-block-title">Afternoon</h3>
+              <div class="time-block-time">12:00 – 16:00</div>
+            </div>
+            <div class="time-block-progress-section">
+              <div class="time-block-progress-bar">
+                <div class="time-block-progress-fill" data-progress="0" style="width: 0%"></div>
+              </div>
+              <div class="time-block-stats" data-stats="0 / 0 tasks done · 0h 0m scheduled"></div>
+            </div>
+          </div>
+          <div class="time-block-tasks" id="afternoonTasks"></div>
+          <div class="time-block-add">
+            <button class="time-block-add-btn" onclick="toggleAddForm('afternoon')">+ Add Task to Afternoon</button>
+            <button class="time-block-add-btn" onclick="openAddFromListModal('afternoon')">+ Add from List</button>
+            <div class="time-block-add-form" id="afternoonForm">
+              <input type="text" class="time-block-form-input" placeholder="Task title (required)"
+                data-block="afternoon" data-field="title">
+              <input type="text" class="time-block-form-input" placeholder="Note (optional)" data-block="afternoon"
+                data-field="note">
+              <div class="time-block-form-time">
+                <input type="number" min="0" max="23" placeholder="H" data-block="afternoon" data-field="hours">
+                <span style="color: var(--text-secondary);">:</span>
+                <input type="number" min="0" max="59" placeholder="M" data-block="afternoon" data-field="minutes">
+              </div>
+              <div class="time-block-form-actions">
+                <button class="time-block-form-btn time-block-form-btn-secondary"
+                  onclick="cancelAddForm('afternoon')">Cancel</button>
+                <button class="time-block-form-btn time-block-form-btn-primary"
+                  onclick="addTaskToBlock('afternoon')">Add Task</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evening Block -->
+        <div class="time-block-card" data-block="evening">
+          <div class="time-block-header">
+            <div class="time-block-title-section">
+              <h3 class="time-block-title">Evening</h3>
+              <div class="time-block-time">16:00 – 20:00</div>
+            </div>
+            <div class="time-block-progress-section">
+              <div class="time-block-progress-bar">
+                <div class="time-block-progress-fill" data-progress="0" style="width: 0%"></div>
+              </div>
+              <div class="time-block-stats" data-stats="0 / 0 tasks done · 0h 0m scheduled"></div>
+            </div>
+          </div>
+          <div class="time-block-tasks" id="eveningTasks"></div>
+          <div class="time-block-add">
+            <button class="time-block-add-btn" onclick="toggleAddForm('evening')">+ Add Task to Evening</button>
+            <button class="time-block-add-btn" onclick="openAddFromListModal('evening')">+ Add from List</button>
+            <div class="time-block-add-form" id="eveningForm">
+              <input type="text" class="time-block-form-input" placeholder="Task title (required)" data-block="evening"
+                data-field="title">
+              <input type="text" class="time-block-form-input" placeholder="Note (optional)" data-block="evening"
+                data-field="note">
+              <div class="time-block-form-time">
+                <input type="number" min="0" max="23" placeholder="H" data-block="evening" data-field="hours">
+                <span style="color: var(--text-secondary);">:</span>
+                <input type="number" min="0" max="59" placeholder="M" data-block="evening" data-field="minutes">
+              </div>
+              <div class="time-block-form-actions">
+                <button class="time-block-form-btn time-block-form-btn-secondary"
+                  onclick="cancelAddForm('evening')">Cancel</button>
+                <button class="time-block-form-btn time-block-form-btn-primary" onclick="addTaskToBlock('evening')">Add
+                  Task</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Night Block -->
+        <div class="time-block-card" data-block="night">
+          <div class="time-block-header">
+            <div class="time-block-title-section">
+              <h3 class="time-block-title">Night</h3>
+              <div class="time-block-time">20:00 – 6:00</div>
+            </div>
+            <div class="time-block-progress-section">
+              <div class="time-block-progress-bar">
+                <div class="time-block-progress-fill" data-progress="0" style="width: 0%"></div>
+              </div>
+              <div class="time-block-stats" data-stats="0 / 0 tasks done · 0h 0m scheduled"></div>
+            </div>
+          </div>
+          <div class="time-block-tasks" id="nightTasks"></div>
+          <div class="time-block-add">
+            <button class="time-block-add-btn" onclick="toggleAddForm('night')">+ Add Task to Night</button>
+            <button class="time-block-add-btn" onclick="openAddFromListModal('night')">+ Add from List</button>
+            <div class="time-block-add-form" id="nightForm">
+              <input type="text" class="time-block-form-input" placeholder="Task title (required)" data-block="night"
+                data-field="title">
+              <input type="text" class="time-block-form-input" placeholder="Note (optional)" data-block="night"
+                data-field="note">
+              <div class="time-block-form-time">
+                <input type="number" min="0" max="23" placeholder="H" data-block="night" data-field="hours">
+                <span style="color: var(--text-secondary);">:</span>
+                <input type="number" min="0" max="59" placeholder="M" data-block="night" data-field="minutes">
+              </div>
+              <div class="time-block-form-actions">
+                <button class="time-block-form-btn time-block-form-btn-secondary"
+                  onclick="cancelAddForm('night')">Cancel</button>
+                <button class="time-block-form-btn time-block-form-btn-primary" onclick="addTaskToBlock('night')">Add
+                  Task</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Summary Bar -->
+      <div class="day-planner-summary-bar">
+        <div class="day-planner-summary-bar-content">
+          <div class="day-planner-summary-bar-items">
+            <div class="day-planner-summary-item">
+              <span class="day-planner-summary-label">Total Tasks</span>
+              <span class="day-planner-summary-value" id="dailyTotalTasks">0</span>
+            </div>
+            <div class="day-planner-summary-item">
+              <span class="day-planner-summary-label">Completed</span>
+              <span class="day-planner-summary-value" id="dailyCompletedTasks">0</span>
+            </div>
+            <div class="day-planner-summary-item">
+              <span class="day-planner-summary-label">Total Estimated</span>
+              <span class="day-planner-summary-value" id="dailyTotalEstimated">0h 0m</span>
+            </div>
+            <div class="day-planner-summary-item">
+              <span class="day-planner-summary-label">Time Completed</span>
+              <span class="day-planner-summary-value" id="dailyTimeCompleted">0h 0m</span>
+            </div>
+          </div>
+          <div class="day-planner-summary-bar-progress">
+            <div class="day-planner-summary-bar-progress-label">
+              <span>Daily Progress</span>
+              <span id="dailyProgressPercent">0%</span>
+            </div>
+            <div class="day-planner-summary-bar-progress-bar">
+              <div class="day-planner-summary-bar-progress-fill" id="dailyProgressFill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add from List Modal -->
+  <div class="day-planner-modal-overlay" id="addFromListModal">
+    <div class="day-planner-modal">
+      <div class="day-planner-modal-header">
+        <h3 class="day-planner-modal-title">Add Tasks from List</h3>
+        <button class="day-planner-modal-close" onclick="closeAddFromListModal()">×</button>
+      </div>
+      <div class="day-planner-modal-body">
+        <div class="day-planner-modal-task-list" id="modalTaskList"></div>
+        <div class="day-planner-modal-actions">
+          <button class="day-planner-modal-btn day-planner-modal-btn-secondary"
+            onclick="closeAddFromListModal()">Cancel</button>
+          <button class="day-planner-modal-btn day-planner-modal-btn-primary" onclick="confirmAddFromList()">Add
+            Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Move Block Modal -->
+  <div class="day-planner-move-block-modal" id="moveBlockModal">
+    <div class="day-planner-move-block-title">Move Task to Block</div>
+    <div class="day-planner-move-block-options" id="moveBlockOptions"></div>
+    <div class="day-planner-move-block-actions">
+      <button class="day-planner-move-block-btn day-planner-move-block-btn-secondary"
+        onclick="closeMoveBlockModal()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentViewDate = new Date();
+    let tasks = [];
+    let selectedBlock = null;
+    let selectedTaskIds = new Set();
+
+    // Storage key (same as main app)
+    const STORAGE_KEY = 'focuslist_tasks_v1';
+
+    // Date utilities
+    function formatDateAsYYYYMMDD(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseYYYYMMDDString(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function formatDateDisplay(date) {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    }
+
+    // Load and save tasks
+    function loadTasks() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        const parsed = stored ? JSON.parse(stored) : [];
+        tasks = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn('Failed to load tasks:', e);
+        tasks = [];
+      }
+    }
+
+    function saveTasks() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      } catch (e) {
+        console.warn('Failed to save tasks:', e);
+      }
+    }
+
+    // Get tasks for current date
+    function getTasksForDate(date) {
+      const dateKey = formatDateAsYYYYMMDD(date);
+      return tasks.filter(task => {
+        // Support both taskDate (YYYY-MM-DD) and dateValue
+        if (task.taskDate) {
+          return task.taskDate === dateKey;
+        } else if (task.dateValue) {
+          const taskDate = new Date(task.dateValue);
+          return formatDateAsYYYYMMDD(taskDate) === dateKey;
+        }
+        return false;
+      });
+    }
+
+    // Get tasks for a specific time block
+    function getTasksForBlock(block) {
+      const dateTasks = getTasksForDate(currentViewDate);
+      return dateTasks.filter(task => task.timeBlock === block);
+    }
+
+    // Render all blocks
+    function renderAllBlocks() {
+      const blocks = ['morning', 'afternoon', 'evening', 'night'];
+      blocks.forEach(block => renderBlock(block));
+      updateDailySummary();
+      updateHeaderSummary();
+    }
+
+    // Render a single block
+    function renderBlock(block) {
+      const blockTasks = getTasksForBlock(block);
+      const container = document.getElementById(`${block}Tasks`);
+      container.innerHTML = '';
+
+      if (blockTasks.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;font-size:0.9rem;">No tasks scheduled</p>';
+        updateBlockProgress(block, blockTasks);
+        return;
+      }
+
+      blockTasks.forEach(task => {
+        const taskEl = document.createElement('div');
+        taskEl.className = `time-block-task ${task.status === 'done' ? 'done' : ''} ${task.status === 'cancelled' ? 'cancelled' : ''}`;
+        taskEl.dataset.taskId = task.id;
+        taskEl.innerHTML = `
+          <div class="time-block-task-checkbox ${task.status === 'done' ? 'checked' : ''}" 
+               onclick="toggleTaskStatus('${task.id}')"></div>
+          <div class="time-block-task-content">
+            <div class="time-block-task-title" 
+                 contenteditable="${task.status !== 'cancelled' ? 'true' : 'false'}"
+                 data-field="title"
+                 data-task-id="${task.id}">${task.title || 'Untitled Task'}</div>
+            <div class="time-block-task-note" 
+                 contenteditable="${task.status !== 'cancelled' ? 'true' : 'false'}"
+                 data-field="note"
+                 data-task-id="${task.id}">${task.note || ''}</div>
+            ${(task.estimatedHours > 0 || task.estimatedMinutes > 0) ? `
+              <div class="time-block-task-time">
+                ⏱ ${task.estimatedHours > 0 ? task.estimatedHours + 'h' : ''} ${task.estimatedMinutes > 0 ? task.estimatedMinutes + 'm' : ''}
+              </div>
+            ` : ''}
+          </div>
+          <div class="time-block-task-actions">
+            ${task.status === 'cancelled'
+            ? `<button class="time-block-task-action-btn" onclick="restoreTask('${task.id}')" title="Restore">↩️</button>`
+            : `<button class="time-block-task-action-btn" onclick="cancelTask('${task.id}')" title="Cancel">✕</button>`
+          }
+            <button class="time-block-task-action-btn" onclick="openMoveBlockModal('${task.id}')" title="Move to another block">📅</button>
+            <button class="time-block-task-action-btn delete" onclick="deleteTaskConfirm('${task.id}')" title="Delete">🗑</button>
+          </div>
+        `;
+        container.appendChild(taskEl);
+      });
+
+      // Attach contenteditable listeners
+      container.querySelectorAll('[contenteditable="true"]').forEach(el => {
+        el.addEventListener('blur', function () {
+          const taskId = this.dataset.taskId;
+          const field = this.dataset.field;
+          const value = this.textContent.trim();
+          updateTaskField(taskId, field, value);
+        });
+        el.addEventListener('keydown', function (e) {
+          const field = this.dataset.field;
+          if (e.key === 'Enter' && field === 'title') {
+            e.preventDefault();
+            this.blur();
+          }
+        });
+      });
+
+      updateBlockProgress(block, blockTasks);
+    }
+
+    // Update block progress
+    function updateBlockProgress(block, blockTasks) {
+      const doneCount = blockTasks.filter(t => t.status === 'done').length;
+      const totalCount = blockTasks.length;
+      const percent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+      const card = document.querySelector(`[data-block="${block}"]`);
+      const progressFill = card.querySelector('.time-block-progress-fill');
+      const stats = card.querySelector('.time-block-stats');
+
+      progressFill.style.width = `${percent}%`;
+      progressFill.setAttribute('data-progress', percent);
+
+      // Calculate total estimated time
+      let totalMinutes = 0;
+      blockTasks.forEach(task => {
+        if (task.estimatedHours) totalMinutes += task.estimatedHours * 60;
+        if (task.estimatedMinutes) totalMinutes += task.estimatedMinutes;
+      });
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+      stats.textContent = `${doneCount} / ${totalCount} tasks done · ${timeStr} scheduled`;
+    }
+
+    // Update daily summary
+    function updateDailySummary() {
+      const dateTasks = getTasksForDate(currentViewDate);
+      const totalTasks = dateTasks.length;
+      const completedTasks = dateTasks.filter(t => t.status === 'done').length;
+      const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      let totalEstimatedMinutes = 0;
+      let completedEstimatedMinutes = 0;
+
+      dateTasks.forEach(task => {
+        let taskMinutes = 0;
+        if (task.estimatedHours) taskMinutes += task.estimatedHours * 60;
+        if (task.estimatedMinutes) taskMinutes += task.estimatedMinutes;
+        totalEstimatedMinutes += taskMinutes;
+        if (task.status === 'done') {
+          completedEstimatedMinutes += taskMinutes;
+        }
+      });
+
+      const totalHours = Math.floor(totalEstimatedMinutes / 60);
+      const totalMins = totalEstimatedMinutes % 60;
+      const completedHours = Math.floor(completedEstimatedMinutes / 60);
+      const completedMins = completedEstimatedMinutes % 60;
+
+      document.getElementById('dailyTotalTasks').textContent = totalTasks;
+      document.getElementById('dailyCompletedTasks').textContent = completedTasks;
+      document.getElementById('dailyTotalEstimated').textContent =
+        totalHours > 0 ? `${totalHours}h ${totalMins}m` : `${totalMins}m`;
+      document.getElementById('dailyTimeCompleted').textContent =
+        completedHours > 0 ? `${completedHours}h ${completedMins}m` : `${completedMins}m`;
+      document.getElementById('dailyProgressPercent').textContent = `${percent}%`;
+      document.getElementById('dailyProgressFill').style.width = `${percent}%`;
+    }
+
+    // Update header summary
+    function updateHeaderSummary() {
+      const dateTasks = getTasksForDate(currentViewDate);
+      document.getElementById('totalTasksCount').textContent = dateTasks.length;
+
+      let totalMinutes = 0;
+      dateTasks.forEach(task => {
+        if (task.estimatedHours) totalMinutes += task.estimatedHours * 60;
+        if (task.estimatedMinutes) totalMinutes += task.estimatedMinutes;
+      });
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      document.getElementById('totalEstimatedTime').textContent =
+        hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    }
+
+    // Date navigation
+    function changeDate(delta) {
+      currentViewDate.setDate(currentViewDate.getDate() + delta);
+      currentViewDate.setHours(0, 0, 0, 0);
+      updateDateDisplay();
+      renderAllBlocks();
+    }
+
+    function goToToday() {
+      currentViewDate = new Date();
+      currentViewDate.setHours(0, 0, 0, 0);
+      updateDateDisplay();
+      renderAllBlocks();
+    }
+
+    function updateDateDisplay() {
+      document.getElementById('currentDateDisplay').textContent = formatDateDisplay(currentViewDate);
+    }
+
+    // Task management
+    function toggleTaskStatus(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      if (task.status === 'done') {
+        task.status = 'active';
+      } else {
+        task.status = 'done';
+      }
+
+      saveTasks();
+      renderAllBlocks();
+    }
+
+    function addTaskToBlock(block) {
+      const form = document.getElementById(`${block}Form`);
+      const titleInput = form.querySelector('[data-field="title"]');
+      const noteInput = form.querySelector('[data-field="note"]');
+      const hoursInput = form.querySelector('[data-field="hours"]');
+      const minutesInput = form.querySelector('[data-field="minutes"]');
+
+      const title = titleInput.value.trim();
+      if (!title) {
+        alert('Please enter a task title');
+        return;
+      }
+
+      const note = noteInput.value.trim();
+      const hours = parseInt(hoursInput.value) || 0;
+      const minutes = parseInt(minutesInput.value) || 0;
+      const estimatedTimeMinutes = hours * 60 + minutes;
+
+      const dateKey = formatDateAsYYYYMMDD(currentViewDate);
+      const dateValue = currentViewDate.getTime();
+
+      const task = {
+        id: Date.now().toString(),
+        title,
+        note,
+        category: 'IU',
+        status: 'active',
+        createdAt: Date.now(),
+        taskDate: dateKey,
+        dateValue: dateValue,
+        date: currentViewDate.toDateString(),
+        timeBlock: block,
+        estimatedHours: hours,
+        estimatedMinutes: minutes,
+        estimatedTimeMinutes: estimatedTimeMinutes,
+        pomoSessions: 0,
+        targetPomos: estimatedTimeMinutes > 0 ? Math.max(1, Math.ceil(estimatedTimeMinutes / 25)) : 4
+      };
+
+      tasks.push(task);
+      saveTasks();
+
+      // Clear form
+      titleInput.value = '';
+      noteInput.value = '';
+      hoursInput.value = '';
+      minutesInput.value = '';
+      cancelAddForm(block);
+
+      renderAllBlocks();
+    }
+
+    function toggleAddForm(block) {
+      const form = document.getElementById(`${block}Form`);
+      form.classList.toggle('active');
+    }
+
+    function cancelAddForm(block) {
+      const form = document.getElementById(`${block}Form`);
+      form.classList.remove('active');
+      const inputs = form.querySelectorAll('input');
+      inputs.forEach(input => input.value = '');
+    }
+
+    // Add from List Modal
+    function openAddFromListModal(block) {
+      selectedBlock = block;
+      selectedTaskIds.clear();
+
+      const dateKey = formatDateAsYYYYMMDD(currentViewDate);
+      // Get tasks for this date that don't have a timeBlock assigned yet
+      const availableTasks = tasks.filter(task => {
+        if (task.taskDate !== dateKey) {
+          if (task.dateValue) {
+            const taskDate = new Date(task.dateValue);
+            if (formatDateAsYYYYMMDD(taskDate) !== dateKey) return false;
+          } else {
+            return false;
+          }
+        }
+        return !task.timeBlock || task.timeBlock === '';
+      });
+
+      const modalList = document.getElementById('modalTaskList');
+      modalList.innerHTML = '';
+
+      if (availableTasks.length === 0) {
+        modalList.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">No unassigned tasks for this date</p>';
+      } else {
+        availableTasks.forEach(task => {
+          const taskEl = document.createElement('div');
+          taskEl.className = 'day-planner-modal-task';
+          taskEl.innerHTML = `
+            <div class="day-planner-modal-task-checkbox" onclick="toggleTaskSelection('${task.id}', this)"></div>
+            <div class="day-planner-modal-task-content">
+              <div class="day-planner-modal-task-title">${task.title || 'Untitled Task'}</div>
+              ${task.note ? `<div class="day-planner-modal-task-note">${task.note}</div>` : ''}
+            </div>
+          `;
+          modalList.appendChild(taskEl);
+        });
+      }
+
+      document.getElementById('addFromListModal').classList.add('active');
+    }
+
+    function closeAddFromListModal() {
+      document.getElementById('addFromListModal').classList.remove('active');
+      selectedBlock = null;
+      selectedTaskIds.clear();
+    }
+
+    function toggleTaskSelection(taskId, checkboxEl) {
+      if (selectedTaskIds.has(taskId)) {
+        selectedTaskIds.delete(taskId);
+        checkboxEl.classList.remove('checked');
+      } else {
+        selectedTaskIds.add(taskId);
+        checkboxEl.classList.add('checked');
+      }
+    }
+
+    function confirmAddFromList() {
+      if (selectedTaskIds.size === 0) {
+        alert('Please select at least one task');
+        return;
+      }
+
+      selectedTaskIds.forEach(taskId => {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+          task.timeBlock = selectedBlock;
+        }
+      });
+
+      saveTasks();
+      closeAddFromListModal();
+      renderAllBlocks();
+    }
+
+    // Task editing
+    function updateTaskField(taskId, field, value) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      if (field === 'title') {
+        task.title = value || 'Untitled Task';
+      } else if (field === 'note') {
+        task.note = value;
+      }
+
+      saveTasks();
+      updateDailySummary();
+      updateHeaderSummary();
+      // Update progress for the block containing this task
+      const block = task.timeBlock;
+      if (block) {
+        const blockTasks = getTasksForBlock(block);
+        updateBlockProgress(block, blockTasks);
+      }
+    }
+
+    // Task deletion
+    function deleteTaskConfirm(taskId) {
+      if (confirm('Are you sure you want to delete this task?')) {
+        deleteTask(taskId);
+      }
+    }
+
+    function deleteTask(taskId) {
+      tasks = tasks.filter(t => t.id !== taskId);
+      saveTasks();
+      renderAllBlocks();
+    }
+
+    // Task cancellation/restoration
+    function cancelTask(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      task.status = 'cancelled';
+      saveTasks();
+      renderAllBlocks();
+    }
+
+    function restoreTask(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      task.status = 'active';
+      saveTasks();
+      renderAllBlocks();
+    }
+
+    // Move task between blocks
+    let moveTaskId = null;
+
+    function openMoveBlockModal(taskId) {
+      moveTaskId = taskId;
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const currentBlock = task.timeBlock;
+      const blocks = [
+        { id: 'morning', name: 'Morning', time: '6:00 – 12:00' },
+        { id: 'afternoon', name: 'Afternoon', time: '12:00 – 16:00' },
+        { id: 'evening', name: 'Evening', time: '16:00 – 20:00' },
+        { id: 'night', name: 'Night', time: '20:00 – 6:00' }
+      ];
+
+      const optionsContainer = document.getElementById('moveBlockOptions');
+      optionsContainer.innerHTML = '';
+
+      blocks.forEach(block => {
+        if (block.id !== currentBlock) {
+          const option = document.createElement('div');
+          option.className = 'day-planner-move-block-option';
+          option.innerHTML = `
+            <div style="font-weight: 600;">${block.name}</div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">${block.time}</div>
+          `;
+          option.onclick = () => moveTaskToBlock(taskId, block.id);
+          optionsContainer.appendChild(option);
+        }
+      });
+
+      // Add option to remove from block
+      if (currentBlock) {
+        const removeOption = document.createElement('div');
+        removeOption.className = 'day-planner-move-block-option';
+        removeOption.innerHTML = '<div style="font-weight: 600; color: var(--text-secondary);">Remove from Block</div>';
+        removeOption.onclick = () => moveTaskToBlock(taskId, null);
+        optionsContainer.appendChild(removeOption);
+      }
+
+      document.getElementById('moveBlockModal').classList.add('active');
+    }
+
+    function closeMoveBlockModal() {
+      document.getElementById('moveBlockModal').classList.remove('active');
+      moveTaskId = null;
+    }
+
+    function moveTaskToBlock(taskId, targetBlock) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      task.timeBlock = targetBlock;
+      saveTasks();
+      closeMoveBlockModal();
+      renderAllBlocks();
+    }
+
+    // Move task to different date
+    function moveTaskToDate(taskId, targetDate) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const dateKey = formatDateAsYYYYMMDD(targetDate);
+      const dateValue = targetDate instanceof Date ? targetDate.getTime() : new Date(targetDate).getTime();
+      const dateLabel = new Date(dateValue).toDateString();
+
+      task.taskDate = dateKey;
+      task.dateValue = dateValue;
+      task.date = dateLabel;
+
+      saveTasks();
+      renderAllBlocks();
+    }
+
+    // Make functions globally available
+    window.toggleTaskStatus = toggleTaskStatus;
+    window.toggleAddForm = toggleAddForm;
+    window.cancelAddForm = cancelAddForm;
+    window.addTaskToBlock = addTaskToBlock;
+    window.openAddFromListModal = openAddFromListModal;
+    window.closeAddFromListModal = closeAddFromListModal;
+    window.toggleTaskSelection = toggleTaskSelection;
+    window.confirmAddFromList = confirmAddFromList;
+    window.updateTaskField = updateTaskField;
+    window.deleteTaskConfirm = deleteTaskConfirm;
+    window.deleteTask = deleteTask;
+    window.cancelTask = cancelTask;
+    window.restoreTask = restoreTask;
+    window.openMoveBlockModal = openMoveBlockModal;
+    window.closeMoveBlockModal = closeMoveBlockModal;
+    window.moveTaskToBlock = moveTaskToBlock;
+
+    // Initialize
+    function init() {
+      loadTasks();
+      updateDateDisplay();
+      renderAllBlocks();
+
+      // Event listeners
+      document.getElementById('prevDay').addEventListener('click', () => changeDate(-1));
+      document.getElementById('nextDay').addEventListener('click', () => changeDate(1));
+      document.getElementById('todayBtn').addEventListener('click', goToToday);
+
+      // Close modal on overlay click
+      document.getElementById('addFromListModal').addEventListener('click', (e) => {
+        if (e.target.id === 'addFromListModal') {
+          closeAddFromListModal();
+        }
+      });
+
+      // Close modals on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeAddFromListModal();
+          closeMoveBlockModal();
+        }
+      });
+
+      // Close move block modal on overlay click
+      document.addEventListener('click', (e) => {
+        const modal = document.getElementById('moveBlockModal');
+        if (modal && !modal.contains(e.target) && e.target.id !== 'moveBlockModal') {
+          closeMoveBlockModal();
+        }
+      });
+
+      // Listen for storage changes from other tabs
+      window.addEventListener('storage', () => {
+        loadTasks();
+        renderAllBlocks();
+      });
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+</body>
+
+</html>
