@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goal Countdown</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      --glass: rgba(255, 255, 255, 0.08);
+      --surface: #050505;
+      --surface-alt: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f5f5f7;
+      --muted: #a0a0a5;
+      --green: #34c759;
+      --amber: #ffcc00;
+      --red: #ff453a;
+      --shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #101010 0%, #050505 70%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2.5rem 1rem 3rem;
+    }
+
+    main {
+      width: min(960px, 100%);
+      background: var(--surface-alt);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-title {
+      font-size: clamp(2rem, 5vw, 2.6rem);
+      margin: 0;
+    }
+
+    .current-time {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      display: block;
+    }
+
+    input,
+    textarea,
+    button {
+      font: inherit;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      padding: 0.85rem 1rem;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      transition: border 0.2s, transform 0.15s;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      cursor: pointer;
+      text-align: center;
+      border: none;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.9rem 1.25rem;
+      min-width: 140px;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      box-shadow: 0 18px 38px rgba(168, 85, 247, 0.45);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .search-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+
+    .search-row input {
+      flex: 1;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 20px;
+      color: var(--muted);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .goal-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.2rem 1.4rem;
+      display: grid;
+      gap: 0.6rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .goal-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .goal-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .badge-upcoming {
+      background: rgba(52, 199, 89, 0.15);
+      color: #66f28d;
+      border: 1px solid rgba(52, 199, 89, 0.3);
+    }
+
+    .badge-due {
+      background: rgba(255, 204, 0, 0.12);
+      color: #ffd866;
+      border: 1px solid rgba(255, 204, 0, 0.3);
+    }
+
+    .badge-overdue {
+      background: rgba(255, 69, 58, 0.12);
+      color: #ff7b72;
+      border: 1px solid rgba(255, 69, 58, 0.3);
+    }
+
+    .meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .note {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 14px;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .icon-btn,
+    .finish-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ff7b72;
+    }
+
+    .finish-btn {
+      background: linear-gradient(135deg, #d946ef, #7c3aed);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(124, 58, 237, 0.45);
+    }
+
+    .finish-btn:hover,
+    .icon-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .celebration-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 5, 8, 0.85);
+      backdrop-filter: blur(18px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+      z-index: 999;
+    }
+
+    .celebration-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .celebration-content {
+      position: relative;
+      text-align: center;
+      padding: 2.5rem 3rem;
+      border-radius: 24px;
+      background: rgba(20, 15, 30, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.5),
+        0 0 120px rgba(168, 85, 247, 0.35);
+      z-index: 2;
+    }
+
+    .celebration-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .celebration-title {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .celebration-message {
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .confetti-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        padding: 1.5rem;
+      }
+
+      .goal-card {
+        padding: 1rem;
+      }
+
+      form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="current-time" id="currentTime" aria-live="polite"></p>
+        <h1 class="page-title">Goal Countdown</h1>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <!-- Global Music Controls (shown when music is playing) -->
+
+
+        <a href="index.html" class="btn btn-ghost" style="text-decoration: none;">← Back to Focus List</a>
+      </div>
+    </header>
+
+    <form id="goalForm" novalidate>
+      <div>
+        <label for="goalName">Goal name *</label>
+        <input id="goalName" name="goalName" type="text" placeholder="Launch new feature" required>
+      </div>
+      <div>
+        <label for="goalDate">Target date *</label>
+        <input id="goalDate" name="goalDate" type="date" required>
+      </div>
+      <div style="grid-column: span 2;">
+        <label for="goalNote">Notes</label>
+        <textarea id="goalNote" name="goalNote" placeholder="Add context or steps (optional)"></textarea>
+      </div>
+      <div class="actions" style="grid-column: span 2;">
+        <button type="submit" class="btn btn-primary">Add goal</button>
+        <button type="button" id="clearAll" class="btn btn-ghost">Clear all</button>
+      </div>
+    </form>
+
+    <div class="search-row">
+      <input type="search" id="search" placeholder="Search goals by name or note…" aria-label="Search goals">
+      <span id="goalCount" aria-live="polite"></span>
+    </div>
+
+    <div id="listContainer" aria-live="polite"></div>
+  </main>
+
+  <div id="goalCelebration" class="celebration-overlay" aria-hidden="true">
+    <canvas id="goalConfetti" class="confetti-canvas"></canvas>
+    <div class="celebration-content" role="status" aria-live="polite">
+      <div class="celebration-icon">🌟</div>
+      <h2 class="celebration-title" id="goalCelebrationTitle">Goal Complete!</h2>
+      <p class="celebration-message" id="goalCelebrationMessage">Way to go!</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'focuslist.goalCountdown';
+      const form = document.getElementById('goalForm');
+      const nameInput = document.getElementById('goalName');
+      const dateInput = document.getElementById('goalDate');
+      const noteInput = document.getElementById('goalNote');
+      const listContainer = document.getElementById('listContainer');
+      const searchInput = document.getElementById('search');
+      const clearAllBtn = document.getElementById('clearAll');
+      const currentTimeEl = document.getElementById('currentTime');
+      const goalCountEl = document.getElementById('goalCount');
+      const celebrationOverlay = document.getElementById('goalCelebration');
+      const celebrationTitle = document.getElementById('goalCelebrationTitle');
+      const celebrationMessage = document.getElementById('goalCelebrationMessage');
+      const confettiCanvas = document.getElementById('goalConfetti');
+
+      function safeLoad() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+          console.warn('Failed to load goals', err);
+          return [];
+        }
+      }
+
+      function safeSave(data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (err) {
+          console.warn('Failed to save goals', err);
+        }
+      }
+
+      let goals = safeLoad();
+
+      function normalizeDate(date) {
+        const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        normalized.setHours(0, 0, 0, 0);
+        return normalized;
+      }
+
+      function formatDate(date) {
+        return date.toLocaleDateString(undefined, {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+
+      function formatTimestamp(date) {
+        return date.toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      function render() {
+        const query = searchInput.value.trim().toLowerCase();
+        const todayMidnight = normalizeDate(new Date());
+
+        const filtered = goals
+          .slice()
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .filter(goal => {
+            if (!query) return true;
+            return goal.name.toLowerCase().includes(query) ||
+              (goal.note && goal.note.toLowerCase().includes(query));
+          });
+
+        goalCountEl.textContent = filtered.length
+          ? `${filtered.length} goal${filtered.length > 1 ? 's' : ''}`
+          : 'No goals';
+
+        if (!filtered.length) {
+          listContainer.innerHTML = '<div class="empty-state">No goals yet. Add your first milestone above.</div>';
+          return;
+        }
+
+        const items = filtered.map(goal => {
+          const targetDate = new Date(goal.date);
+          const targetMidnight = normalizeDate(targetDate);
+          const diffDays = Math.floor((targetMidnight - todayMidnight) / 86400000);
+
+          let badgeClass = 'badge-upcoming';
+          let badgeLabel = `${Math.max(diffDays, 0)} day${Math.abs(diffDays) === 1 ? '' : 's'} left`;
+
+          if (diffDays === 0) {
+            badgeClass = 'badge-due';
+            badgeLabel = 'Due today';
+          } else if (diffDays < 0) {
+            badgeClass = 'badge-overdue';
+            const overdueDays = Math.abs(diffDays);
+            badgeLabel = `Overdue by ${overdueDays} day${overdueDays === 1 ? '' : 's'}`;
+          }
+
+          const createdAt = new Date(goal.createdAt);
+
+          return `
+            <li class="goal-card" data-id="${goal.id}">
+              <div class="goal-header">
+                <span class="goal-name">${goal.name}</span>
+                <span class="badge ${badgeClass}" role="status">${badgeLabel}</span>
+              </div>
+              <div class="meta">
+                <span>Target: ${formatDate(targetDate)}</span>
+                <span>Created: ${formatTimestamp(createdAt)}</span>
+              </div>
+              ${goal.note ? `<div class="note">${goal.note}</div>` : ''}
+              <div class="card-actions">
+                <button class="finish-btn" data-action="finish" aria-label="Finish goal ${goal.name}">Finish</button>
+                <button class="icon-btn" data-action="delete" aria-label="Delete goal ${goal.name}">Delete</button>
+              </div>
+            </li>
+          `;
+        }).join('');
+
+        listContainer.innerHTML = `<ul>${items}</ul>`;
+      }
+
+      function handleSubmit(event) {
+        event.preventDefault();
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+
+        const goal = {
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+          name: nameInput.value.trim(),
+          date: dateInput.value,
+          note: noteInput.value.trim(),
+          createdAt: new Date().toISOString()
+        };
+
+        goals.push(goal);
+        safeSave(goals);
+        form.reset();
+        render();
+        nameInput.focus();
+      }
+
+      function handleListClick(event) {
+        const action = event.target.dataset.action;
+        if (!action) return;
+        const card = event.target.closest('.goal-card');
+        if (!card) return;
+        const id = card.dataset.id;
+        const goal = goals.find(item => item.id === id);
+        if (!goal) return;
+
+        if (action === 'delete') {
+          goals = goals.filter(item => item.id !== id);
+          safeSave(goals);
+          render();
+        } else if (action === 'finish') {
+          goals = goals.filter(item => item.id !== id);
+          safeSave(goals);
+          render();
+          triggerCelebration(goal.name);
+        }
+      }
+
+      function handleClearAll() {
+        if (!goals.length) return;
+        if (!confirm('Clear all goals?')) return;
+        goals = [];
+        safeSave(goals);
+        render();
+      }
+
+      function updateCurrentTime() {
+        const now = new Date();
+        currentTimeEl.textContent = now.toLocaleString(undefined, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      function triggerCelebration(goalName) {
+        if (!celebrationOverlay || !confettiCanvas) return;
+
+        celebrationTitle.textContent = 'Goal Complete!';
+        celebrationMessage.textContent = `You finished “${goalName}”! Keep shining.`;
+        celebrationOverlay.classList.add('active');
+        celebrationOverlay.setAttribute('aria-hidden', 'false');
+
+        startConfetti();
+
+        if (celebrationOverlay.dataset.dismissTimeout) {
+          clearTimeout(Number(celebrationOverlay.dataset.dismissTimeout));
+        }
+        const timeoutId = setTimeout(() => {
+          hideCelebration();
+        }, 5000);
+        celebrationOverlay.dataset.dismissTimeout = timeoutId;
+      }
+
+      function hideCelebration() {
+        if (!celebrationOverlay) return;
+        celebrationOverlay.classList.remove('active');
+        celebrationOverlay.setAttribute('aria-hidden', 'true');
+        stopConfetti();
+        if (celebrationOverlay.dataset.dismissTimeout) {
+          clearTimeout(Number(celebrationOverlay.dataset.dismissTimeout));
+          delete celebrationOverlay.dataset.dismissTimeout;
+        }
+      }
+
+      let confettiParticles = [];
+      let confettiAnimationId = null;
+      let resizeHandler = null;
+
+      function startConfetti() {
+        if (!confettiCanvas) return;
+        const colors = ['#c084fc', '#a855f7', '#7c3aed', '#f472b6', '#f472d0'];
+        const canvas = confettiCanvas;
+        const ctx = canvas.getContext('2d');
+
+        function setSize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+
+        setSize();
+        resizeHandler = setSize;
+        window.addEventListener('resize', resizeHandler);
+
+        confettiParticles = Array.from({ length: 160 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 8 + 3,
+          speedX: (Math.random() - 0.5) * 2,
+          speedY: Math.random() * 3 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotationSpeed: (Math.random() - 0.5) * 6,
+          shape: Math.random() > 0.6 ? 'circle' : 'square'
+        }));
+
+        function animate() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          confettiParticles.forEach(particle => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.rotation += particle.rotationSpeed;
+            particle.speedY += 0.05;
+
+            ctx.save();
+            ctx.translate(particle.x, particle.y);
+            ctx.rotate((particle.rotation * Math.PI) / 180);
+            ctx.fillStyle = particle.color;
+
+            if (particle.shape === 'circle') {
+              ctx.beginPath();
+              ctx.arc(0, 0, particle.size / 2, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+            }
+
+            ctx.restore();
+
+            if (particle.y > canvas.height + 50) {
+              particle.y = -10;
+              particle.speedY = Math.random() * 2 + 2;
+            }
+          });
+
+          confettiAnimationId = requestAnimationFrame(animate);
+        }
+
+        animate();
+      }
+
+      function stopConfetti() {
+        if (!confettiCanvas) return;
+        if (confettiAnimationId) {
+          cancelAnimationFrame(confettiAnimationId);
+          confettiAnimationId = null;
+        }
+        if (resizeHandler) {
+          window.removeEventListener('resize', resizeHandler);
+          resizeHandler = null;
+        }
+        if (confettiCanvas) {
+          const ctx = confettiCanvas.getContext('2d');
+          ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        }
+        confettiParticles = [];
+      }
+
+      celebrationOverlay?.addEventListener('click', hideCelebration);
+
+      form.addEventListener('submit', handleSubmit);
+      listContainer.addEventListener('click', handleListClick);
+      clearAllBtn.addEventListener('click', handleClearAll);
+      searchInput.addEventListener('input', render);
+
+      updateCurrentTime();
+      setInterval(updateCurrentTime, 60_000);
+      render();
+    })();
+  </script>
+
+</body>
+
+</html>

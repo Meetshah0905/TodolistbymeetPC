@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <title>Calendar View - Focus List</title>
+  <script>
+    (function () {
+      try {
+        var storedTheme = localStorage.getItem('theme');
+        if (storedTheme && storedTheme !== 'system') {
+          document.documentElement.setAttribute('data-theme', storedTheme);
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+      } catch (error) {
+        console.warn('Theme bootstrap failed', error);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .calendar-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .calendar-title {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .settings {
+      background: transparent;
+      border: none;
+      padding: 0;
+      min-width: auto;
+    }
+
+    .settings summary {
+      cursor: pointer;
+      font-weight: 500;
+      user-select: none;
+      list-style: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      transition: all 0.2s;
+      display: inline-block;
+      font-size: 0.9rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .settings summary:hover {
+      background: var(--surface);
+    }
+
+    [data-theme="dark"] .settings summary {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: var(--text);
+    }
+
+    [data-theme="dark"] .settings summary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .settings summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .settings-content {
+      margin-top: 1rem;
+      display: grid;
+      gap: 1rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow-md);
+      animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    [data-theme="dark"] .settings-content {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    .settings-content label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .settings-content input[type="number"] {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .settings-content input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    [data-theme="dark"] .settings-content input[type="number"] {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    [data-theme="dark"] .settings-content input[type="number"]:focus {
+      border-color: white;
+    }
+
+    .checkbox-label {
+      flex-direction: row !important;
+      align-items: center;
+    }
+
+    .checkbox-label input {
+      width: auto;
+      margin-right: 0.5rem;
+      accent-color: var(--primary);
+    }
+
+    .calendar-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+      opacity: 1 !important;
+      min-height: 200px;
+      visibility: visible !important;
+      transition: none !important;
+    }
+
+    /* Prevent calendar grid from being hidden during updates */
+    .calendar-grid.updating {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: flex !important;
+    }
+
+    .calendar-day {
+      background: var(--surface-elevated);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.4s ease-out forwards;
+      transition: all 0.3s ease;
+    }
+
+    .calendar-day.today {
+      border: 2px solid var(--primary);
+      box-shadow: 0 4px 20px rgba(10, 132, 255, 0.2);
+      background: var(--surface-elevated);
+    }
+
+    .calendar-day.today .day-date {
+      color: var(--primary);
+      font-weight: 700;
+      position: relative;
+    }
+
+    .calendar-day.today .day-date::before {
+      content: 'Today';
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--primary);
+      margin-right: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .calendar-day:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .calendar-day.past {
+      opacity: 0.7;
+    }
+
+    .calendar-day.future {
+      opacity: 0.9;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
+    }
+
+    .calendar-task {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .calendar-task:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .calendar-task.done {
+      opacity: 0.7;
+      background: rgba(52, 199, 89, 0.1);
+    }
+
+    .calendar-task.done .task-title-text {
+      text-decoration: line-through;
+    }
+
+    .calendar-task.cancelled {
+      opacity: 0.5;
+      background: rgba(255, 59, 48, 0.1);
+    }
+
+    .calendar-task.cancelled .task-title-text {
+      text-decoration: line-through;
+    }
+
+    .pomo-reset-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pomo-time {
+      transition: color 0.3s ease;
+    }
+
+
+    .day-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .day-date {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .day-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .calendar-task {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border);
+      transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+      cursor: move;
+      outline: none;
+      will-change: background-color, opacity;
+    }
+
+    .calendar-task.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .calendar-task.drag-over {
+      border-color: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+    }
+
+    .calendar-task:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .calendar-task:hover {
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
+    }
+
+    .task-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .task-name-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .task-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+      background: var(--surface);
+      flex-shrink: 0;
+      will-change: background-color, border-color;
+    }
+
+    .task-checkbox:hover:not(:disabled) {
+      border-color: var(--primary);
+      transform: scale(1.1);
+    }
+
+    .task-checkbox:checked {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .task-checkbox:checked::before {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .task-checkbox:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .task-name {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .task-title-text {
+      word-break: break-word;
+    }
+
+    .task-emoji {
+      font-size: 1.2rem;
+    }
+
+    .task-pomo-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pomo-time {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .pomo-reset-btn {
+      padding: 0.25rem 0.5rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      will-change: background-color, color;
+    }
+
+    .pomo-reset-btn:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .pomo-reset-btn:active {
+      transform: scale(0.95);
+    }
+
+    .pomo-reset-btn:focus {
+      outline: none;
+    }
+
+    /* Prevent flash on button click */
+    .pomo-reset-btn,
+    .task-checkbox {
+      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+    }
+
+    .task-progress {
+      margin-top: 0.75rem;
+    }
+
+    .task-progress-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .task-progress-bar-container {
+      height: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.4),
+        0 1px 2px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+
+    [data-theme="dark"] .task-progress-bar-container {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .task-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg,
+          rgba(255, 255, 255, 0.3) 0%,
+          rgba(255, 255, 255, 0.4) 25%,
+          rgba(255, 255, 255, 0.5) 50%,
+          rgba(255, 255, 255, 0.4) 75%,
+          rgba(255, 255, 255, 0.3) 100%);
+      border-radius: 8px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 0 15px rgba(255, 255, 255, 0.4),
+        0 0 30px rgba(255, 255, 255, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    [data-theme="dark"] .task-progress-bar {
+      background: linear-gradient(90deg,
+          rgba(255, 255, 255, 0.4) 0%,
+          rgba(255, 255, 255, 0.5) 25%,
+          rgba(255, 255, 255, 0.6) 50%,
+          rgba(255, 255, 255, 0.5) 75%,
+          rgba(255, 255, 255, 0.4) 100%);
+      box-shadow:
+        0 0 20px rgba(255, 255, 255, 0.5),
+        0 0 40px rgba(255, 255, 255, 0.3),
+        0 0 60px rgba(255, 255, 255, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Shine animation effect */
+    .task-progress-bar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(255, 255, 255, 0.5),
+          transparent);
+      animation: progressShine 2.5s infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* 3D depth effect */
+    .task-progress-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg,
+          rgba(255, 255, 255, 0.25) 0%,
+          transparent 50%,
+          rgba(0, 0, 0, 0.2) 100%);
+      pointer-events: none;
+      border-radius: 8px;
+      z-index: 2;
+    }
+
+    @keyframes progressShine {
+      0% {
+        left: -100%;
+        opacity: 0;
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        left: 100%;
+        opacity: 0;
+      }
+    }
+
+    .task-progress-bar.complete {
+      animation: progressComplete 0.8s ease-out;
+      box-shadow:
+        0 0 25px rgba(255, 255, 255, 0.6),
+        0 0 50px rgba(255, 255, 255, 0.4),
+        0 0 75px rgba(255, 255, 255, 0.2),
+        inset 0 1px 3px rgba(255, 255, 255, 0.5);
+    }
+
+    [data-theme="dark"] .task-progress-bar.complete {
+      box-shadow:
+        0 0 30px rgba(255, 255, 255, 0.7),
+        0 0 60px rgba(255, 255, 255, 0.5),
+        0 0 90px rgba(255, 255, 255, 0.3),
+        inset 0 1px 3px rgba(255, 255, 255, 0.6);
+    }
+
+    @keyframes progressComplete {
+      0% {
+        transform: scaleX(1);
+        box-shadow:
+          0 0 15px rgba(255, 255, 255, 0.4),
+          0 0 30px rgba(255, 255, 255, 0.2),
+          inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      }
+
+      50% {
+        transform: scaleX(1.02);
+        box-shadow:
+          0 0 40px rgba(255, 255, 255, 0.8),
+          0 0 80px rgba(255, 255, 255, 0.6),
+          0 0 120px rgba(255, 255, 255, 0.4),
+          inset 0 1px 3px rgba(255, 255, 255, 0.6);
+      }
+
+      100% {
+        transform: scaleX(1);
+        box-shadow:
+          0 0 25px rgba(255, 255, 255, 0.6),
+          0 0 50px rgba(255, 255, 255, 0.4),
+          0 0 75px rgba(255, 255, 255, 0.2),
+          inset 0 1px 3px rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    .task-progress-label.updating {
+      animation: progressLabelPulse 0.4s ease;
+    }
+
+    @keyframes progressLabelPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    .empty-day {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    .add-task-btn {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .add-task-btn:hover {
+      background: var(--surface-elevated);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    @media (max-width: 768px) {
+      .calendar-container {
+        padding: 1rem;
+      }
+
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-left">
+      <h1 class="logo">Focus List</h1>
+    </div>
+    <div class="header-right">
+      <nav class="primary-nav" id="primaryNav" data-nav-menu>
+        <a href="index.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">List View</a>
+        <a href="matrix.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Matrix View</a>
+        <a href="motivation.html" class="btn-ghost"
+          style="text-decoration: none; color: inherit; display: inline-flex; align-items: center;">Motivation 🕙</a>
+
+      </nav>
+      <div class="header-actions">
+        <!-- Global Music Controls (shown when music is playing) -->
+
+        <button id="themeToggle" class="btn-ghost" aria-label="Toggle theme">
+          <span class="theme-icon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="calendar-container">
+    <div class="calendar-header">
+      <h2 class="calendar-title">Working Space</h2>
+      <div class="calendar-nav">
+        <button id="prevBtn" class="btn-ghost">← Previous</button>
+        <button id="todayBtn" class="btn-ghost">Today</button>
+        <button id="nextBtn" class="btn-ghost">Next →</button>
+        <details class="settings">
+          <summary>Settings</summary>
+          <div class="settings-content">
+            <label>
+              Work (min)
+              <input id="durWork" type="number" min="5" max="90" value="25">
+            </label>
+            <label>
+              Short break (min)
+              <input id="durShort" type="number" min="3" max="30" value="5">
+            </label>
+            <label>
+              Long break (min)
+              <input id="durLong" type="number" min="5" max="60" value="15">
+            </label>
+            <label>
+              Rounds until long break
+              <input id="roundsLong" type="number" min="1" max="12" value="4">
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoNext">
+              Auto-next session
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="soundOn" checked>
+              Sound on completion
+            </label>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </main>
+
+  <script src="theme.js" defer></script>
+  <script src="header.js" defer></script>
+
+  <script src="calendar.js" defer></script>
+</body>
+
+</html>
