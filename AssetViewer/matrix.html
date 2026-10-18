@@ -13,7 +13,7 @@
         if (storedTheme && storedTheme !== 'system') {
           document.documentElement.setAttribute('data-theme', storedTheme);
         } else {
-          document.documentElement.removeAttribute('data-theme');
+          document.documentElement.setAttribute('data-theme', window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         }
       } catch (error) {
         console.warn('Theme bootstrap failed', error);
@@ -21,6 +21,14 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
@@ -164,6 +172,9 @@
   <script src="header.js" defer></script>
 
   <script src="matrix.js" defer></script>
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>

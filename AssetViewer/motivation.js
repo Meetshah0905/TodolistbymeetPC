@@ -30,8 +30,12 @@ const COVER_FILENAMES = [
   "e91e7505955bda3d8994be149d1dd9eb.jpg"
 ];
 
-const COVER_DIR = encodeURIComponent('cover page');
-const COVER_IMAGES = COVER_FILENAMES.map(name => `assets/${COVER_DIR}/${encodeURIComponent(name)}`);
+// 480px-wide JPEG thumbnails in assets/optimized/covers (generated from assets/cover page,
+// ~1.6 MB total instead of ~13 MB). File names: spaces -> '-', parentheses removed, '.jpg'.
+const COVER_IMAGES = COVER_FILENAMES.map(name => {
+  const base = name.replace(/\.[^.]+$/, '').replace(/ /g, '-').replace(/[()]/g, '');
+  return `assets/optimized/covers/${encodeURIComponent(base)}.jpg`;
+});
 const COVER_ORDER = shuffleArray(COVER_IMAGES);
 
 const VIDEO_SOURCES = [
@@ -191,6 +195,18 @@ function setupModal() {
   });
 
   stage.addEventListener('click', event => event.stopPropagation());
+
+  // Swipe left/right on phones to move between reels
+  let touchStartX = null;
+  stage.addEventListener('touchstart', event => {
+    touchStartX = event.touches[0].clientX;
+  }, { passive: true });
+  stage.addEventListener('touchend', event => {
+    if (touchStartX === null) return;
+    const dx = event.changedTouches[0].clientX - touchStartX;
+    touchStartX = null;
+    if (Math.abs(dx) > 60) navigateVideo(state, dx < 0 ? 1 : -1);
+  }, { passive: true });
   layer.addEventListener('click', () => closeModal(state));
   closeBtn.addEventListener('click', () => closeModal(state));
 
@@ -376,9 +392,29 @@ function formatTime(seconds) {
   return `${mins}:${secs}`;
 }
 
+// Covers load only when a card scrolls near the screen
+const coverObserver = 'IntersectionObserver' in window
+  ? new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      coverObserver.unobserve(entry.target);
+      loadCover(entry.target, entry.target.dataset.cover);
+    });
+  }, { rootMargin: '300px 0px' })
+  : null;
+
 function assignCoverImage(element, index) {
   if (!COVER_ORDER.length) return;
   const coverSrc = COVER_ORDER[index % COVER_ORDER.length];
+  if (coverObserver) {
+    element.dataset.cover = coverSrc;
+    coverObserver.observe(element);
+  } else {
+    loadCover(element, coverSrc);
+  }
+}
+
+function loadCover(element, coverSrc) {
   const img = new Image();
   img.src = coverSrc;
   img.onload = () => {

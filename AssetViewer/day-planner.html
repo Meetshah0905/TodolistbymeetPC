@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Day Planner</title>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -760,6 +760,14 @@
       background: rgba(255, 255, 255, 0.12);
     }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
@@ -1038,6 +1046,21 @@
     // Storage key (same as main app)
     const STORAGE_KEY = 'focuslist_tasks_v1';
 
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[ch]);
+    }
+
+    // Tasks changed in another tab or arrived from cloud sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === null || e.key === STORAGE_KEY) {
+        loadTasks();
+        renderAllBlocks();
+      }
+    });
+    window.__flLiveSync = true;
+
     // Date utilities
     function formatDateAsYYYYMMDD(date) {
       const year = date.getFullYear();
@@ -1128,11 +1151,11 @@
             <div class="time-block-task-title" 
                  contenteditable="${task.status !== 'cancelled' ? 'true' : 'false'}"
                  data-field="title"
-                 data-task-id="${task.id}">${task.title || 'Untitled Task'}</div>
+                 data-task-id="${task.id}">${escapeHTML(task.title || 'Untitled Task')}</div>
             <div class="time-block-task-note" 
                  contenteditable="${task.status !== 'cancelled' ? 'true' : 'false'}"
                  data-field="note"
-                 data-task-id="${task.id}">${task.note || ''}</div>
+                 data-task-id="${task.id}">${escapeHTML(task.note || '')}</div>
             ${(task.estimatedHours > 0 || task.estimatedMinutes > 0) ? `
               <div class="time-block-task-time">
                 ⏱ ${task.estimatedHours > 0 ? task.estimatedHours + 'h' : ''} ${task.estimatedMinutes > 0 ? task.estimatedMinutes + 'm' : ''}
@@ -1377,8 +1400,8 @@
           taskEl.innerHTML = `
             <div class="day-planner-modal-task-checkbox" onclick="toggleTaskSelection('${task.id}', this)"></div>
             <div class="day-planner-modal-task-content">
-              <div class="day-planner-modal-task-title">${task.title || 'Untitled Task'}</div>
-              ${task.note ? `<div class="day-planner-modal-task-note">${task.note}</div>` : ''}
+              <div class="day-planner-modal-task-title">${escapeHTML(task.title || 'Untitled Task')}</div>
+              ${task.note ? `<div class="day-planner-modal-task-note">${escapeHTML(task.note)}</div>` : ''}
             </div>
           `;
           modalList.appendChild(taskEl);
@@ -1604,17 +1627,15 @@
         }
       });
 
-      // Listen for storage changes from other tabs
-      window.addEventListener('storage', () => {
-        loadTasks();
-        renderAllBlocks();
-      });
     }
 
     // Initialize on load
     document.addEventListener('DOMContentLoaded', init);
   </script>
 
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>

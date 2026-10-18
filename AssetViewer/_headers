@@ -1,0 +1,21 @@
+# HTTP headers for Cloudflare Pages and Netlify (both read this file from the publish folder).
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Media and images rarely change: let browsers keep them for a week
+/assets/*
+  Cache-Control: public, max-age=604800
+
+/icons/*
+  Cache-Control: public, max-age=604800
+
+# Must always be fresh so updates reach users
+/sw.js
+  Cache-Control: no-cache
+
+/supabase-config.js
+  Cache-Control: no-cache

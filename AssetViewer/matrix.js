@@ -46,13 +46,10 @@ function initMatrix() {
   initAddForms();
   renderMatrix();
 
-  window.addEventListener('tasksUpdated', () => {
-    matrixState.tasks = loadTasks();
-    renderMatrix();
-  });
-
+  // Tasks changed in another tab or arrived from cloud sync
+  window.__flLiveSync = true;
   window.addEventListener('storage', event => {
-    if (event.key === STORAGE_KEY) {
+    if (event.key === null || event.key === STORAGE_KEY) {
       matrixState.tasks = loadTasks();
       renderMatrix();
     }
@@ -75,7 +72,6 @@ function loadTasks() {
 function saveTasks(tasks) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    window.dispatchEvent(new CustomEvent('tasksUpdated'));
   } catch (error) {
     console.warn('Matrix view failed to save tasks', error);
   }

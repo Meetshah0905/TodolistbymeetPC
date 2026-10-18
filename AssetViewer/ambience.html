@@ -1,16 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ambience Studio - Chill Music</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Ambience Studio - Focus List</title>
+    <meta name="description" content="Free focus sounds: rain, thunderstorm, fireplace and cottage ambience. Mix them while you work.">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.18);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.16);
             --glass-shadow: rgba(0, 0, 0, 0.3);
             --text-primary: #ffffff;
             --text-secondary: rgba(255, 255, 255, 0.7);
@@ -25,252 +24,210 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
             min-height: 100vh;
             padding: 40px 20px;
             overflow-x: hidden;
             position: relative;
             background: #0a0a0a;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Animated Background */
+        /* Soft background glow (static gradients: cheap to render on phones) */
         body::before {
             content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background:
-                radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(29, 185, 84, 0.1) 0%, transparent 50%);
-            animation: gradientShift 15s ease infinite;
+                radial-gradient(circle at 15% 20%, rgba(102, 126, 234, 0.22) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(29, 185, 84, 0.14) 0%, transparent 45%),
+                radial-gradient(circle at 60% 45%, rgba(245, 87, 108, 0.10) 0%, transparent 50%);
             z-index: -1;
         }
 
-        @keyframes gradientShift {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1) rotate(0deg);
-            }
-
-            50% {
-                opacity: 0.8;
-                transform: scale(1.1) rotate(5deg);
-            }
-        }
-
-        /* Floating Orbs */
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.3;
-            animation: float 20s ease-in-out infinite;
-            z-index: -1;
-        }
-
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            top: -100px;
-            left: -100px;
-            animation-delay: 0s;
-        }
-
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: linear-gradient(135deg, #1db954, #1ed760);
-            bottom: -50px;
-            right: -50px;
-            animation-delay: 7s;
-        }
-
-        .orb-3 {
-            width: 350px;
-            height: 350px;
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            top: 50%;
-            left: 50%;
-            animation-delay: 14s;
-        }
-
-        @keyframes float {
-
-            0%,
-            100% {
-                transform: translate(0, 0) scale(1);
-            }
-
-            33% {
-                transform: translate(50px, -50px) scale(1.1);
-            }
-
-            66% {
-                transform: translate(-30px, 30px) scale(0.9);
-            }
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         /* Header */
         .header {
-            max-width: 1400px;
-            margin: 0 auto 50px;
             display: flex;
             align-items: center;
             gap: 24px;
-            animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            margin-bottom: 36px;
+            flex-wrap: wrap;
         }
 
         .back-btn {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 10px;
             color: var(--text-primary);
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 12px 24px;
+            padding: 12px 22px;
             border-radius: 20px;
             background: var(--glass-bg);
-            backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             box-shadow: 0 8px 32px var(--glass-shadow);
+            transition: transform 0.2s, background 0.2s;
         }
 
         .back-btn:hover {
-            transform: translateX(-5px);
+            transform: translateX(-4px);
             background: rgba(255, 255, 255, 0.12);
         }
 
         .header-title {
             flex: 1;
+            min-width: 0;
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: clamp(2rem, 6vw, 3rem);
             font-weight: 800;
+            line-height: 1.1;
             margin-bottom: 8px;
-            background: linear-gradient(135deg, #ffffff 0%, #667eea 50%, #764ba2 100%);
+            background: linear-gradient(135deg, #ffffff 0%, #8ea2ff 55%, #b18cff 100%);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--text-secondary);
             font-weight: 500;
         }
 
-        /* Grid Layout */
-        .music-grid {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 32px;
+        /* Toolbar: stop all + sleep timer */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 14px 16px;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
         }
 
-        /* Glass Music Card */
+        .toolbar-status {
+            flex: 1;
+            min-width: 160px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .toolbar-status strong {
+            color: var(--text-primary);
+        }
+
+        .toolbar select,
+        .toolbar button {
+            min-height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            font: 600 0.9rem/1 inherit;
+            font-family: inherit;
+            padding: 0 14px;
+            cursor: pointer;
+        }
+
+        .toolbar select option {
+            background: #1a1a1f;
+        }
+
+        /* Grid */
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+            gap: 24px;
+        }
+
         .music-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(30px);
             border-radius: 28px;
-            padding: 28px;
+            padding: 24px;
             border: 1px solid var(--glass-border);
-            box-shadow: 0 8px 32px var(--glass-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 8px 32px var(--glass-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
-        .music-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-glow);
+        .music-card.playing {
+            border-color: rgba(142, 162, 255, 0.55);
+            box-shadow: 0 14px 44px rgba(0, 0, 0, 0.45), 0 0 34px var(--accent-glow);
+        }
+
+        @media (hover: hover) {
+            .music-card:hover {
+                transform: translateY(-6px);
+                background: rgba(255, 255, 255, 0.1);
+            }
         }
 
         .card-header {
             display: flex;
             align-items: center;
-            gap: 18px;
-            margin-bottom: 24px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .music-icon {
-            width: 64px;
-            height: 64px;
+            width: 60px;
+            height: 60px;
             background: var(--accent-gradient);
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 30px;
             flex-shrink: 0;
             box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
         }
 
         .card-title {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            margin-bottom: 6px;
-            color: var(--text-primary);
+            margin-bottom: 4px;
         }
 
         .card-type {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: var(--text-secondary);
             font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        /* Audio Visualizer Placeholder */
         .visualizer-container {
-            height: 120px;
-            background: rgba(0, 0, 0, 0.2);
+            height: 96px;
+            background: rgba(0, 0, 0, 0.22);
             border-radius: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            overflow: hidden;
         }
 
         .visualizer-bars {
             display: flex;
             gap: 4px;
             align-items: flex-end;
-            height: 60px;
+            height: 56px;
         }
 
         .v-bar {
             width: 6px;
+            height: 10px;
             background: var(--accent-gradient);
             border-radius: 3px;
-            height: 10px;
-            transition: height 0.1s ease;
+            transform-origin: bottom;
         }
 
         .music-card.playing .v-bar {
@@ -278,80 +235,46 @@
         }
 
         @keyframes bounce {
-
-            0%,
-            100% {
-                height: 10px;
-            }
-
-            50% {
-                height: 50px;
-            }
+            0%, 100% { height: 10px; }
+            50% { height: 50px; }
         }
 
-        .v-bar:nth-child(odd) {
-            animation-duration: 0.8s;
-        }
+        .v-bar:nth-child(odd) { animation-duration: 0.8s !important; }
+        .v-bar:nth-child(2n) { animation-duration: 1.1s !important; }
+        .v-bar:nth-child(3n) { animation-duration: 1.3s !important; }
 
-        .v-bar:nth-child(2n) {
-            animation-duration: 1.1s;
-        }
-
-        .v-bar:nth-child(3n) {
-            animation-duration: 1.3s;
-        }
-
-        /* Controls */
         .controls-section {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 16px;
+            gap: 14px;
+            padding: 12px 14px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .btn {
+        .play-btn {
+            width: 52px;
+            height: 52px;
+            flex-shrink: 0;
             border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+            border-radius: 50%;
+            background: #fff;
+            color: #000;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.15s;
         }
 
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
-        }
-
-        .btn.active {
-            background: var(--accent-gradient);
-            color: white;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .play-btn {
-            width: 48px;
-            height: 48px;
-            background: white;
-            color: black;
-            border-radius: 50%;
-        }
-
-        .play-btn:hover {
-            background: #f0f0f0;
-            transform: scale(1.1);
+        .play-btn:active {
+            transform: scale(0.92);
         }
 
         .volume-control {
             flex: 1;
+            min-width: 0;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -359,351 +282,258 @@
 
         .volume-slider {
             flex: 1;
-            height: 4px;
+            min-width: 0;
+            height: 32px;
             -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.2);
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-runnable-track {
+            height: 4px;
             border-radius: 2px;
-            outline: none;
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .volume-slider::-moz-range-track {
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.22);
         }
 
         .volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: white;
+            width: 20px;
+            height: 20px;
+            margin-top: -8px;
+            background: #fff;
             border-radius: 50%;
-            cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s;
         }
 
-        .volume-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: #fff;
+            border-radius: 50%;
         }
 
         .volume-value {
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            min-width: 35px;
+            min-width: 38px;
             text-align: right;
+            font-variant-numeric: tabular-nums;
         }
 
-        /* Loading Animation */
+        .tip {
+            margin-top: 28px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
         @keyframes cardAppear {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 14px;
             }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .header {
+                gap: 14px;
+                margin-bottom: 20px;
+            }
+
+            .back-btn {
+                padding: 10px 16px;
+            }
+
+            .subtitle {
+                font-size: 0.95rem;
+            }
+
+            .music-grid {
+                gap: 14px;
+            }
+
+            .music-card {
+                padding: 16px;
+                border-radius: 22px;
+            }
+
+            .card-header {
+                margin-bottom: 14px;
+            }
+
+            .music-icon {
+                width: 52px;
+                height: 52px;
+                font-size: 26px;
+            }
+
+            .visualizer-container {
+                height: 64px;
+                margin-bottom: 14px;
+            }
+
+            .visualizer-bars {
+                height: 44px;
             }
         }
 
-        .music-card:nth-child(1) {
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-        }
-
-        .music-card:nth-child(2) {
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-        }
-
-        .music-card:nth-child(3) {
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-        }
-
-        .music-card:nth-child(4) {
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+        @media (prefers-reduced-motion: reduce) {
+            .music-card,
+            .music-card.playing .v-bar {
+                animation: none !important;
+            }
         }
     </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
-    <!-- Floating Orbs -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-
-    <div class="header">
-        <a href="index.html" class="back-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back
-        </a>
-        <div class="header-title">
-            <h1>Ambience Studio</h1>
-            <p class="subtitle">Immerse yourself in soothing sounds</p>
+    <div class="page">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back
+            </a>
+            <div class="header-title">
+                <h1>Ambience Studio</h1>
+                <p class="subtitle">Mix soothing sounds while you focus</p>
+            </div>
         </div>
+
+        <div class="toolbar">
+            <div class="toolbar-status" id="ambStatus" aria-live="polite">Tap play on any sound. You can mix several.</div>
+            <select id="sleepTimer" aria-label="Stop sounds after">
+                <option value="0">No timer</option>
+                <option value="15">Stop in 15 min</option>
+                <option value="30">Stop in 30 min</option>
+                <option value="60">Stop in 1 hour</option>
+                <option value="90">Stop in 1.5 hours</option>
+            </select>
+            <button type="button" id="stopAll">Stop all</button>
+        </div>
+
+        <div class="music-grid" id="musicGrid"></div>
+
+        <p class="tip">Sounds keep looping until you stop them. Your volume levels are remembered.</p>
     </div>
 
-    <div class="music-grid">
-        <!-- Card 1: Cottage Light -->
-        <div class="music-card" id="card-1">
-            <audio id="audio-1" src="assets/ambience music/Cottage light.mp3" preload="metadata"></audio>
-            <div class="card-header">
-                <div class="music-icon">🏡</div>
-                <div class="card-info">
-                    <div class="card-title">Cottage Light</div>
-                    <div class="card-type">Local Audio</div>
-                </div>
-            </div>
-
-            <div class="visualizer-container">
-                <div class="visualizer-bars">
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                </div>
-            </div>
-
-            <div class="controls-section">
-                <button class="btn loop-btn" onclick="toggleLoop(1)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                </button>
-
-                <button class="btn play-btn" onclick="togglePlay(1)">
-                    <svg class="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                    <svg class="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
-                        style="display:none">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-
-                <div class="volume-control">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                    </svg>
-                    <input type="range" class="volume-slider" min="0" max="100" value="70"
-                        oninput="setVolume(1, this.value)">
-                    <span class="volume-value">70%</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 2: Wooden Fire -->
-        <div class="music-card" id="card-2">
-            <audio id="audio-2" src="assets/ambience music/Wooden Fire.mp3" preload="metadata"></audio>
-            <div class="card-header">
-                <div class="music-icon">🔥</div>
-                <div class="card-info">
-                    <div class="card-title">Wooden Fire</div>
-                    <div class="card-type">Local Audio</div>
-                </div>
-            </div>
-
-            <div class="visualizer-container">
-                <div class="visualizer-bars">
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                </div>
-            </div>
-
-            <div class="controls-section">
-                <button class="btn loop-btn" onclick="toggleLoop(2)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                </button>
-
-                <button class="btn play-btn" onclick="togglePlay(2)">
-                    <svg class="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                    <svg class="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
-                        style="display:none">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-
-                <div class="volume-control">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                    </svg>
-                    <input type="range" class="volume-slider" min="0" max="100" value="70"
-                        oninput="setVolume(2, this.value)">
-                    <span class="volume-value">70%</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 3: Thunder (Placeholder) -->
-        <div class="music-card" id="card-3">
-            <!-- Using Cottage Light as placeholder since file is missing -->
-            <audio id="audio-3" src="assets/ambience music/Cottage light.mp3" preload="metadata"></audio>
-            <div class="card-header">
-                <div class="music-icon">⛈️</div>
-                <div class="card-info">
-                    <div class="card-title">Thunder and Rain</div>
-                    <div class="card-type">Local Audio</div>
-                </div>
-            </div>
-
-            <div class="visualizer-container">
-                <div class="visualizer-bars">
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                </div>
-            </div>
-
-            <div class="controls-section">
-                <button class="btn loop-btn" onclick="toggleLoop(3)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                </button>
-
-                <button class="btn play-btn" onclick="togglePlay(3)">
-                    <svg class="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                    <svg class="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
-                        style="display:none">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-
-                <div class="volume-control">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                    </svg>
-                    <input type="range" class="volume-slider" min="0" max="100" value="70"
-                        oninput="setVolume(3, this.value)">
-                    <span class="volume-value">70%</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4: Heavy Rain (Placeholder) -->
-        <div class="music-card" id="card-4">
-            <!-- Using Wooden Fire as placeholder since file is missing -->
-            <audio id="audio-4" src="assets/ambience music/Wooden Fire.mp3" preload="metadata"></audio>
-            <div class="card-header">
-                <div class="music-icon">🌧️</div>
-                <div class="card-info">
-                    <div class="card-title">Heavy Rain</div>
-                    <div class="card-type">Local Audio</div>
-                </div>
-            </div>
-
-            <div class="visualizer-container">
-                <div class="visualizer-bars">
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                    <div class="v-bar"></div>
-                </div>
-            </div>
-
-            <div class="controls-section">
-                <button class="btn loop-btn" onclick="toggleLoop(4)">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                </button>
-
-                <button class="btn play-btn" onclick="togglePlay(4)">
-                    <svg class="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M8 5v14l11-7z" />
-                    </svg>
-                    <svg class="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
-                        style="display:none">
-                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                    </svg>
-                </button>
-
-                <div class="volume-control">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
-                    </svg>
-                    <input type="range" class="volume-slider" min="0" max="100" value="70"
-                        oninput="setVolume(4, this.value)">
-                    <span class="volume-value">70%</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="ambience-engine.js"></script>
     <script>
-        console.log('🎵 Ambience Studio - Local Audio Engine Loaded');
+        (function () {
+            const engine = window.FLAmbience;
+            const grid = document.getElementById('musicGrid');
+            const status = document.getElementById('ambStatus');
+            const sleepSelect = document.getElementById('sleepTimer');
+            const bars = '<div class="v-bar"></div>'.repeat(9);
+            const playIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+            const pauseIcon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
 
-        function togglePlay(id) {
-            const audio = document.getElementById(`audio-${id}`);
-            const card = document.getElementById(`card-${id}`);
-            const playIcon = card.querySelector('.play-icon');
-            const pauseIcon = card.querySelector('.pause-icon');
+            grid.innerHTML = engine.SOUNDS.map((s, i) => {
+                const vol = Math.round(engine.getVolume(s.id) * 100);
+                return `
+                <div class="music-card" id="card-${s.id}" style="animation-delay:${0.08 * i + 0.05}s">
+                    <div class="card-header">
+                        <div class="music-icon" aria-hidden="true">${s.icon}</div>
+                        <div class="card-info">
+                            <div class="card-title">${s.title}</div>
+                            <div class="card-type">${s.kind}</div>
+                        </div>
+                    </div>
+                    <div class="visualizer-container" aria-hidden="true">
+                        <div class="visualizer-bars">${bars}</div>
+                    </div>
+                    <div class="controls-section">
+                        <button class="play-btn" data-play="${s.id}" aria-label="Play ${s.title}">${playIcon}</button>
+                        <div class="volume-control">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
+                            </svg>
+                            <input type="range" class="volume-slider" min="0" max="100" value="${vol}"
+                                data-volume="${s.id}" aria-label="${s.title} volume">
+                            <span class="volume-value" data-volume-label="${s.id}">${vol}%</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
 
-            if (audio.paused) {
-                audio.play();
-                card.classList.add('playing');
-                playIcon.style.display = 'none';
-                pauseIcon.style.display = 'block';
-            } else {
-                audio.pause();
-                card.classList.remove('playing');
-                playIcon.style.display = 'block';
-                pauseIcon.style.display = 'none';
+            grid.addEventListener('click', e => {
+                const btn = e.target.closest('[data-play]');
+                if (btn) engine.toggle(btn.dataset.play);
+            });
+
+            grid.addEventListener('input', e => {
+                const slider = e.target.closest('[data-volume]');
+                if (!slider) return;
+                engine.setVolume(slider.dataset.volume, slider.value / 100);
+                grid.querySelector(`[data-volume-label="${slider.dataset.volume}"]`).textContent = slider.value + '%';
+            });
+
+            document.getElementById('stopAll').addEventListener('click', () => engine.stopAll());
+
+            // Sleep timer
+            let sleepTimer = null;
+            let sleepEndsAt = 0;
+            sleepSelect.addEventListener('change', () => {
+                clearTimeout(sleepTimer);
+                const minutes = Number(sleepSelect.value);
+                sleepEndsAt = minutes ? Date.now() + minutes * 60000 : 0;
+                if (minutes) {
+                    sleepTimer = setTimeout(() => {
+                        engine.stopAll();
+                        sleepSelect.value = '0';
+                        sleepEndsAt = 0;
+                        render();
+                    }, minutes * 60000);
+                }
+                render();
+            });
+
+            function render() {
+                const playing = engine.playingIds();
+                engine.SOUNDS.forEach(s => {
+                    const on = playing.includes(s.id);
+                    const card = document.getElementById(`card-${s.id}`);
+                    card.classList.toggle('playing', on);
+                    const btn = card.querySelector('[data-play]');
+                    btn.innerHTML = on ? pauseIcon : playIcon;
+                    btn.setAttribute('aria-label', `${on ? 'Pause' : 'Play'} ${s.title}`);
+                });
+                if (playing.length) {
+                    const names = playing.map(id => engine.SOUNDS.find(s => s.id === id).title).join(' + ');
+                    const timerText = sleepEndsAt ? ` · stops at ${new Date(sleepEndsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : '';
+                    status.innerHTML = `Playing <strong>${names}</strong>${timerText}`;
+                } else {
+                    status.textContent = 'Tap play on any sound. You can mix several.';
+                }
             }
-        }
 
-        function toggleLoop(id) {
-            const audio = document.getElementById(`audio-${id}`);
-            const btn = document.querySelector(`#card-${id} .loop-btn`);
-
-            audio.loop = !audio.loop;
-            btn.classList.toggle('active');
-
-            console.log(`Loop ${audio.loop ? 'enabled' : 'disabled'} for card ${id}`);
-        }
-
-        function setVolume(id, value) {
-            const audio = document.getElementById(`audio-${id}`);
-            const display = document.querySelector(`#card-${id} .volume-value`);
-
-            audio.volume = value / 100;
-            display.textContent = value + '%';
-        }
-
-        // Initialize volumes
-        document.querySelectorAll('audio').forEach(audio => {
-            audio.volume = 0.7;
-        });
+            engine.onChange(render);
+            render();
+        })();
     </script>
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>
