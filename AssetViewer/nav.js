@@ -42,9 +42,11 @@
 
   window.FL = Object.assign(window.FL || {}, { escapeHTML, icon });
 
+  // Hosts like Cloudflare Pages serve "/habit-tracker" instead of "/habit-tracker.html"
   function currentPage() {
-    const last = location.pathname.split('/').pop();
-    return last && last.endsWith('.html') ? last : 'index.html';
+    const last = location.pathname.replace(/\/+$/, '').split('/').pop();
+    if (!last) return 'index.html';
+    return last.endsWith('.html') ? last : `${last}.html`;
   }
 
   function init() {
