@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Goal Countdown</title>
   <style>
     :root {
@@ -352,6 +352,14 @@
       }
     }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
@@ -408,6 +416,12 @@
   <script>
     (function () {
       const STORAGE_KEY = 'focuslist.goalCountdown';
+
+      function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
+      }
       const form = document.getElementById('goalForm');
       const nameInput = document.getElementById('goalName');
       const dateInput = document.getElementById('goalDate');
@@ -513,17 +527,17 @@
           return `
             <li class="goal-card" data-id="${goal.id}">
               <div class="goal-header">
-                <span class="goal-name">${goal.name}</span>
+                <span class="goal-name">${escapeHTML(goal.name)}</span>
                 <span class="badge ${badgeClass}" role="status">${badgeLabel}</span>
               </div>
               <div class="meta">
                 <span>Target: ${formatDate(targetDate)}</span>
                 <span>Created: ${formatTimestamp(createdAt)}</span>
               </div>
-              ${goal.note ? `<div class="note">${goal.note}</div>` : ''}
+              ${goal.note ? `<div class="note">${escapeHTML(goal.note)}</div>` : ''}
               <div class="card-actions">
-                <button class="finish-btn" data-action="finish" aria-label="Finish goal ${goal.name}">Finish</button>
-                <button class="icon-btn" data-action="delete" aria-label="Delete goal ${goal.name}">Delete</button>
+                <button class="finish-btn" data-action="finish" aria-label="Finish goal ${escapeHTML(goal.name)}">Finish</button>
+                <button class="icon-btn" data-action="delete" aria-label="Delete goal ${escapeHTML(goal.name)}">Delete</button>
               </div>
             </li>
           `;
@@ -716,12 +730,24 @@
       clearAllBtn.addEventListener('click', handleClearAll);
       searchInput.addEventListener('input', render);
 
+      // Goals changed in another tab or arrived from cloud sync
+      window.addEventListener('storage', event => {
+        if (event.key === null || event.key === STORAGE_KEY) {
+          goals = safeLoad();
+          render();
+        }
+      });
+      window.__flLiveSync = true;
+
       updateCurrentTime();
       setInterval(updateCurrentTime, 60_000);
       render();
     })();
   </script>
 
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>

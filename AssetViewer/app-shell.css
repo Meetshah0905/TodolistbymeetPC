@@ -1,0 +1,1252 @@
+/* Shared app shell (nav.js + sync.js). Loaded last on every page. */
+:root {
+  --fl-sheet: rgba(22, 22, 26, 0.96);
+  --fl-sheet-border: rgba(255, 255, 255, 0.1);
+  --fl-text: #f5f5f7;
+  --fl-muted: #a1a1a8;
+  --fl-accent: #0a84ff;
+  --fl-ok: #34c759;
+  --fl-warn: #ff9f0a;
+  --fl-err: #ff453a;
+  --fl-field: rgba(255, 255, 255, 0.06);
+  --fl-tabbar-h: 60px;
+}
+
+:root[data-theme="light"] {
+  --fl-sheet: rgba(255, 255, 255, 0.97);
+  --fl-sheet-border: rgba(0, 0, 0, 0.1);
+  --fl-text: #1d1d1f;
+  --fl-muted: #6e6e73;
+  --fl-field: rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --fl-sheet: rgba(255, 255, 255, 0.97);
+    --fl-sheet-border: rgba(0, 0, 0, 0.1);
+    --fl-text: #1d1d1f;
+    --fl-muted: #6e6e73;
+    --fl-field: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.fl-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+html.fl-lock-scroll,
+html.fl-lock-scroll body {
+  overflow: hidden;
+}
+
+/* ---------- Desktop nav ---------- */
+.fl-nav-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  white-space: nowrap;
+  padding: 0.45rem 0.8rem !important;
+  font-size: 0.88rem !important;
+}
+
+body.fl-has-shell .logo,
+body.fl-has-shell .page-title {
+  white-space: nowrap;
+}
+
+/* Keep the desktop header on one row */
+@media (min-width: 1025px) {
+  body.fl-has-shell .header-right {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  body.fl-has-shell .primary-nav {
+    flex-wrap: nowrap;
+    gap: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  body.fl-has-shell .primary-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.fl-has-shell .header-actions {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+
+  body.fl-has-shell #searchInput {
+    min-width: 0;
+    width: 170px;
+  }
+}
+
+.fl-nav-link.is-current {
+  background: rgba(10, 132, 255, 0.18) !important;
+  border-color: rgba(10, 132, 255, 0.45) !important;
+}
+
+.fl-account-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  position: relative;
+  white-space: nowrap;
+}
+
+/* Ambience page has its own styles (no .btn-ghost there) */
+.page .fl-account-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font: 600 0.9rem/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+}
+
+.fl-sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fl-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.fl-sync-dot[data-state="synced"] { background: var(--fl-ok); opacity: 1; }
+.fl-sync-dot[data-state="syncing"] { background: var(--fl-accent); opacity: 1; animation: fl-pulse 1s infinite; }
+.fl-sync-dot[data-state="error"] { background: var(--fl-err); opacity: 1; }
+.fl-sync-dot[data-state="offline"] { background: var(--fl-warn); opacity: 1; }
+
+@keyframes fl-pulse {
+  50% { opacity: 0.3; }
+}
+
+/* ---------- Mobile tab bar + drawer ---------- */
+.fl-tabbar,
+.fl-drawer {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  body.fl-has-shell {
+    padding-bottom: calc(var(--fl-tabbar-h) + env(safe-area-inset-bottom) + 8px) !important;
+  }
+
+  /* Compact header: logo + small actions on one row, pages list moves to the drawer */
+  body.fl-has-shell .header {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center !important;
+    justify-content: space-between;
+    gap: 0.5rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  body.fl-has-shell .header-left {
+    width: auto !important;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.fl-has-shell .header-right {
+    width: auto !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    flex: 0 1 auto;
+    gap: 0.5rem !important;
+  }
+
+  body.fl-has-shell [data-nav-menu] {
+    display: none !important;
+  }
+
+  body.fl-has-shell .header-actions {
+    width: auto !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+  }
+
+  body.fl-has-shell .header-actions .btn-ghost,
+  body.fl-has-shell .header-actions button {
+    width: auto !important;
+    min-height: 40px;
+    padding: 0.45rem 0.7rem !important;
+  }
+
+  /* Clear All is reachable from the More drawer on phones */
+  body.fl-has-shell #clearAll {
+    display: none !important;
+  }
+
+  /* Search gets its own full-width row under the header */
+  body.fl-has-shell .header-right:has(#searchInput),
+  body.fl-has-shell .header-actions:has(#searchInput) {
+    display: contents !important;
+  }
+
+  body.fl-has-shell #searchInput {
+    order: 10;
+    flex: 1 0 100%;
+    width: 100% !important;
+    min-height: 40px;
+    padding: 0.55rem 0.9rem !important;
+  }
+
+  body.fl-has-shell .fl-account-label {
+    display: none;
+  }
+
+  body.fl-has-shell .logo,
+  body.fl-has-shell .page-title {
+    font-size: 1.25rem !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Hide the desktop-only keyboard shortcuts footer */
+  body.fl-has-shell .footer .shortcuts {
+    display: none;
+  }
+
+  .fl-tabbar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 900;
+    height: calc(var(--fl-tabbar-h) + env(safe-area-inset-bottom));
+    padding: 0 4px env(safe-area-inset-bottom);
+    background: var(--fl-sheet);
+    border-top: 1px solid var(--fl-sheet-border);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+  }
+
+  .fl-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    background: none;
+    border: 0;
+    color: var(--fl-muted);
+    font: 500 11px/1.1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .fl-tab .fl-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .fl-tab.is-current {
+    color: var(--fl-accent);
+  }
+
+  .fl-tab:active {
+    transform: scale(0.94);
+  }
+
+  .fl-drawer {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+  }
+
+  .fl-drawer[hidden] {
+    display: none;
+  }
+}
+
+.fl-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.fl-drawer-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 0.5rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  background: var(--fl-sheet);
+  color: var(--fl-text);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--fl-sheet-border);
+  transform: translateY(100%);
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.fl-drawer.is-open .fl-drawer-backdrop { opacity: 1; }
+.fl-drawer.is-open .fl-drawer-sheet { transform: translateY(0); }
+
+.fl-drawer-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--fl-muted);
+  opacity: 0.4;
+  margin: 0.25rem auto 0.5rem;
+}
+
+.fl-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 1.05rem;
+}
+
+.fl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--fl-field);
+  color: var(--fl-text);
+  cursor: pointer;
+}
+
+.fl-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.fl-drawer-link,
+.fl-drawer-action {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 52px;
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  background: var(--fl-field);
+  border: 1px solid transparent;
+  color: var(--fl-text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.fl-drawer-link.is-current {
+  border-color: var(--fl-accent);
+  color: var(--fl-accent);
+}
+
+.fl-drawer-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.fl-drawer-action {
+  width: 100%;
+}
+
+.fl-drawer-action .fl-sync-dot {
+  margin-left: auto;
+}
+
+.fl-danger {
+  color: var(--fl-err);
+}
+
+/* ---------- Page fixes for phones: To-Do (index.html) ---------- */
+@media (max-width: 768px) {
+  /* Date navigation: one compact row instead of three full-width buttons */
+  .todo-header-nav {
+    margin-bottom: 1rem !important;
+  }
+
+  .date-navigation {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "prev label next" "today today today";
+    gap: 0.5rem !important;
+    align-items: center;
+  }
+
+  .date-navigation .btn-ghost {
+    width: auto !important;
+    padding: 0.55rem 0.8rem !important;
+    min-height: 42px;
+    border-radius: 12px !important;
+    font-size: 0.85rem !important;
+  }
+
+  #datePrevBtn { grid-area: prev; }
+  #dateNextBtn { grid-area: next; }
+  #dateTodayBtn { grid-area: today; width: 100% !important; }
+
+  #currentDateDisplay {
+    grid-area: label;
+    min-width: 0 !important;
+    padding: 0 !important;
+    font-weight: 600;
+    color: inherit !important;
+    font-size: 1rem !important;
+  }
+
+  /* Task cards: checkbox + full-width text, then category chip and actions on one row */
+  .task-item {
+    grid-template-columns: 28px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "check content content"
+      ". chip actions"
+      "move move move";
+    gap: 0.5rem 0.6rem !important;
+    padding: 0.85rem !important;
+  }
+
+  .task-item .drag-handle { display: none !important; }
+  .task-item .task-checkbox { grid-area: check; margin-top: 2px; }
+  .task-item .task-content { grid-area: content; min-width: 0; }
+  .task-item .task-move-panel { grid-area: move; }
+
+  .task-item .priority-chip {
+    grid-area: chip;
+    justify-self: start;
+    align-self: center;
+    min-width: 0 !important;
+    padding: 0.3rem 0.7rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  .task-item .task-actions {
+    grid-area: actions;
+    gap: 0.15rem !important;
+  }
+
+  .task-item .task-actions .btn-icon {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0.35rem !important;
+  }
+
+  .task-item .task-title {
+    font-size: 0.98rem !important;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  /* Estimated time + add form: denser */
+  .add-task .time-inputs input {
+    min-height: 44px;
+  }
+}
+
+/* ---------- Focus sounds (timer panel on index.html) ---------- */
+.focus-sounds {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 auto 1rem;
+  width: 100%;
+  max-width: 520px;
+}
+
+.focus-sounds-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+}
+
+.focus-sounds-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.focus-sound-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 38px;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: 600 0.8rem/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.focus-sound-chip.on {
+  background: rgba(10, 132, 255, 0.55);
+  border-color: rgba(120, 180, 255, 0.9);
+}
+
+/* ---------- Habit tracker ---------- */
+.habit-today {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(52, 199, 89, 0.06);
+  border: 1px solid rgba(52, 199, 89, 0.25);
+}
+
+.habit-today[hidden] {
+  display: none;
+}
+
+.habit-today-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.habit-today-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #34c759;
+}
+
+.habit-today-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.habit-today-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 52px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font: 600 0.95rem/1.25 inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.habit-today-item:active {
+  transform: scale(0.98);
+}
+
+.habit-today-check {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+}
+
+.habit-today-item.done {
+  background: rgba(52, 199, 89, 0.16);
+  border-color: rgba(52, 199, 89, 0.5);
+}
+
+.habit-today-item.done .habit-today-check {
+  background: #34c759;
+  border-color: #34c759;
+}
+
+.habit-today-item.done .habit-today-name {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .habit-tracker-page {
+    padding: 0 !important;
+  }
+
+  .habit-tracker-page > .header {
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  .habit-container {
+    gap: 1rem !important;
+    padding: 0.75rem;
+  }
+
+  .habit-main-card,
+  .habit-overview-card,
+  .habit-graph-card {
+    padding: 1rem !important;
+    border-radius: 18px !important;
+  }
+
+  .habit-header {
+    margin-bottom: 1rem !important;
+  }
+
+  .habit-month-nav {
+    gap: 0.75rem !important;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .habit-month-title {
+    font-size: 1.3rem !important;
+    line-height: 1.2 !important;
+    text-align: center;
+    flex: 1;
+  }
+
+  .habit-nav-btn {
+    width: 44px !important;
+    height: 44px !important;
+    flex-shrink: 0;
+  }
+
+  /* Summary: 3 small tiles in one row */
+  .habit-summary {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .habit-summary-item {
+    gap: 0.2rem !important;
+    min-width: 0;
+  }
+
+  .habit-summary-label {
+    font-size: 0.68rem !important;
+    line-height: 1.2;
+  }
+
+  .habit-summary-value,
+  .habit-progress-text {
+    font-size: 1.25rem !important;
+  }
+
+  .habit-progress-container {
+    min-width: 0 !important;
+  }
+
+  .habit-progress-bar {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Add row: input + Add side by side, secondary actions as a pair */
+  .habit-add-section {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+  }
+
+  .habit-add-input {
+    min-height: 46px;
+    font-size: 16px !important;
+  }
+
+  .habit-add-btn {
+    min-height: 46px;
+  }
+
+  .habit-copy-btn,
+  .habit-stats-btn {
+    width: 100% !important;
+    font-size: 0.8rem !important;
+    padding: 0.6rem !important;
+  }
+
+  .habit-today-list {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-table-wrapper {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  .habit-table td.habit-name-cell,
+  .habit-table th.habit-name-col {
+    max-width: 130px;
+    min-width: 110px !important;
+  }
+}
+
+/* ---------- Day planner ---------- */
+/* Task buttons were hover-only (invisible and unusable on touch screens) */
+@media (hover: none) {
+  .time-block-task-actions {
+    opacity: 1 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .day-planner-page {
+    padding: 0 !important;
+  }
+
+  .day-planner-page > .header {
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .day-planner-container {
+    gap: 1rem !important;
+    padding: 0.75rem;
+  }
+
+  .day-planner-header {
+    padding: 1rem !important;
+    gap: 1rem !important;
+  }
+
+  .day-planner-title {
+    display: none;
+  }
+
+  .day-planner-date-nav {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "prev label next" "today today today";
+    gap: 0.5rem !important;
+    align-items: center;
+  }
+
+  .day-planner-date-nav #prevDay { grid-area: prev; }
+  .day-planner-date-nav #nextDay { grid-area: next; }
+  .day-planner-date-nav #todayBtn { grid-area: today; }
+
+  .day-planner-date-btn {
+    min-height: 42px;
+    padding: 0.5rem 0.8rem !important;
+    white-space: nowrap;
+  }
+
+  .day-planner-date-display {
+    grid-area: label;
+    min-width: 0 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.25;
+  }
+
+  .day-planner-summary {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .day-planner-blocks {
+    gap: 1rem !important;
+  }
+
+  .time-block-card {
+    padding: 1rem !important;
+    min-height: 0 !important;
+  }
+
+  .time-block-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.6rem;
+  }
+
+  .time-block-progress-section {
+    align-items: stretch !important;
+    min-width: 0 !important;
+  }
+
+  .time-block-task {
+    flex-wrap: wrap;
+    padding: 0.75rem !important;
+  }
+
+  .time-block-task-content {
+    flex: 1 1 calc(100% - 40px);
+    min-width: 0;
+  }
+
+  .time-block-task-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .time-block-task-action-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .time-block-add {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .time-block-add-btn {
+    margin: 0 !important;
+    min-height: 44px;
+    font-size: 0.85rem !important;
+  }
+
+  .time-block-add-form {
+    grid-column: 1 / -1;
+  }
+
+  .time-block-form-input {
+    font-size: 16px !important;
+  }
+}
+
+/* ---------- Calendar ---------- */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 0.75rem !important;
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .calendar-title {
+    font-size: 1.35rem !important;
+    text-align: left !important;
+  }
+
+  .calendar-nav {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem !important;
+    width: 100%;
+  }
+
+  .calendar-nav .btn-ghost {
+    width: 100% !important;
+    min-height: 42px;
+    padding: 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .calendar-nav .settings {
+    grid-column: 1 / -1;
+  }
+
+  .calendar-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.75rem !important;
+    min-width: 0 !important;
+  }
+
+  .calendar-day {
+    padding: 1rem !important;
+    min-width: 0;
+  }
+
+  .calendar-task {
+    padding: 0.75rem !important;
+  }
+
+  .task-header-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .task-name-row {
+    flex: 1 1 100% !important;
+    min-width: 0;
+  }
+
+  .task-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .task-pomo-controls {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 0.25rem !important;
+  }
+
+  .task-pomo-controls .pomo-time {
+    margin-right: auto;
+  }
+
+  .task-pomo-controls .pomo-reset-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* ---------- Light theme contrast fixes ---------- */
+/* Calendar nav buttons were white text on a white page in light theme */
+:root[data-theme="light"] .calendar-nav .btn-ghost {
+  color: var(--text) !important;
+  background: var(--surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Motivation is a dark page in every theme: keep its header dark too */
+:root[data-theme="light"] .motivation-body .header {
+  background: #0b0b0f !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  color: #f5f5f7;
+}
+
+:root[data-theme="light"] .motivation-body .header .btn-ghost {
+  color: #f5f5f7 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* ---------- Matrix ---------- */
+/* The hero card is dark in every theme, so its text must stay light */
+.matrix-legend-item,
+.matrix-hero .matrix-title {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.matrix-hero .matrix-kicker {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+@media (max-width: 768px) {
+  .matrix-container {
+    padding: 0.75rem !important;
+  }
+
+  .matrix-hero {
+    padding: 1.25rem !important;
+    border-radius: 20px !important;
+  }
+
+  .matrix-title {
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .matrix-legend {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* ---------- Goal countdown + Ambience ---------- */
+@media (max-width: 768px) {
+  /* The notes field's inline "span 2" was forcing a squeezed 2-column form */
+  #goalForm {
+    grid-template-columns: 1fr !important;
+  }
+
+  #goalForm > div {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* Ambience: title gets its own row under Back / Sync */
+  .page > .header .header-title {
+    order: 3;
+    flex: 1 0 100%;
+  }
+
+  .page > .header .fl-account-btn {
+    margin-left: auto;
+  }
+}
+
+/* ---------- Toasts ---------- */
+.fl-toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 3000;
+  display: grid;
+  gap: 0.5rem;
+  width: min(92vw, 420px);
+  pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+  .fl-toast-wrap {
+    bottom: calc(var(--fl-tabbar-h) + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
+.fl-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  background: var(--fl-sheet);
+  color: var(--fl-text);
+  border: 1px solid var(--fl-sheet-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  font: 500 0.9rem/1.35 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: auto;
+  animation: fl-toast-in 0.2s ease;
+}
+
+.fl-toast button {
+  margin-left: auto;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  background: var(--fl-accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+@keyframes fl-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+
+/* ---------- Account modal ---------- */
+.fl-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.fl-modal[hidden] {
+  display: none;
+}
+
+.fl-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.fl-modal-card {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  border-radius: 20px;
+  background: var(--fl-sheet);
+  color: var(--fl-text);
+  border: 1px solid var(--fl-sheet-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 520px) {
+  .fl-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .fl-modal-card {
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    max-height: 92vh;
+    max-height: 92dvh;
+  }
+}
+
+.fl-modal-card h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.25rem;
+}
+
+.fl-modal-card p {
+  margin: 0;
+}
+
+.fl-muted {
+  color: var(--fl-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.fl-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--fl-sheet-border);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.fl-section h3 {
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fl-muted);
+  margin: 0;
+}
+
+.fl-field {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--fl-sheet-border);
+  background: var(--fl-field);
+  color: var(--fl-text);
+  font: 16px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+.fl-field:focus {
+  outline: 2px solid var(--fl-accent);
+  outline-offset: 0;
+}
+
+.fl-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fl-row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.fl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--fl-sheet-border);
+  background: var(--fl-field);
+  color: var(--fl-text);
+  font: 600 0.95rem/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.fl-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.fl-btn-primary {
+  background: var(--fl-accent);
+  border-color: var(--fl-accent);
+  color: #fff;
+}
+
+.fl-btn-google {
+  background: #fff;
+  color: #1f1f1f;
+  border-color: #dadce0;
+}
+
+.fl-btn-danger {
+  color: var(--fl-err);
+}
+
+.fl-close-x {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.fl-msg {
+  font-size: 0.88rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--fl-field);
+}
+
+.fl-msg[data-kind="error"] { color: var(--fl-err); }
+.fl-msg[data-kind="ok"] { color: var(--fl-ok); }
+
+.fl-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  background: var(--fl-field);
+}
+
+.fl-tabs button {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fl-muted);
+  font: 600 0.85rem/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  cursor: pointer;
+}
+
+.fl-tabs button[aria-selected="true"] {
+  background: var(--fl-sheet);
+  color: var(--fl-text);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.fl-keybox {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px dashed var(--fl-warn);
+  background: rgba(255, 159, 10, 0.08);
+}
+
+.fl-status-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}

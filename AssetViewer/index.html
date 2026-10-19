@@ -13,7 +13,7 @@
         if (storedTheme && storedTheme !== 'system') {
           document.documentElement.setAttribute('data-theme', storedTheme);
         } else {
-          document.documentElement.removeAttribute('data-theme');
+          document.documentElement.setAttribute('data-theme', window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         }
       } catch (error) {
         console.warn('Theme bootstrap failed', error);
@@ -21,6 +21,14 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
@@ -130,10 +138,9 @@
     <section class="pomo-panel panel">
       <div class="hero-bg" id="heroBg">
         <video class="hero-video" id="heroVideo" autoplay loop muted playsinline preload="auto"
-          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
-          <source src="assets/background-video.mp4.mp4" type="video/mp4">
-          <source src="assets/background-video.mp4" type="video/mp4">
-          <!-- Fallback to image if video is not available -->
+          poster="assets/optimized/focus-bg-poster.jpg">
+          <!-- 720p / 1 MB re-encode of assets/background-video.mp4.mp4 (4K, 8 MB) -->
+          <source src="assets/optimized/focus-bg-720.mp4" type="video/mp4">
         </video>
         <div class="hero-overlay"></div>
         <div class="hero-content">
@@ -158,6 +165,11 @@
           <div class="pomo-info">
             <p class="attached-task" id="attachedTask">No task attached</p>
             <p class="rounds-counter">Rounds: <strong id="roundsCount">0</strong></p>
+          </div>
+
+          <div class="focus-sounds" id="focusSounds" aria-label="Focus sounds">
+            <span class="focus-sounds-label">🎧 Focus sounds</span>
+            <div class="focus-sounds-chips" id="focusSoundChips"></div>
           </div>
 
           <details class="settings">
@@ -222,7 +234,11 @@
   <script src="theme.js" defer></script>
   <script src="header.js" defer></script>
 
+  <script src="ambience-engine.js" defer></script>
   <script src="app.js" defer></script>
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>

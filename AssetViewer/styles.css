@@ -1636,6 +1636,7 @@ body.nav-open {
   justify-content: center;
   overflow: hidden;
   background-color: #000; /* Fallback color while loading */
+  background-image: url('assets/optimized/focus-bg-poster.jpg'); /* shown instantly, video fades in on top */
 }
 
 /* Hide background image initially, show only if video fails */

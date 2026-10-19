@@ -320,9 +320,11 @@ function loadTasks() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     const parsed = stored ? JSON.parse(stored) : [];
-    state.tasks = Array.isArray(parsed) ? parsed.map(normalizeTask) : [];
-    // Save tasks after normalization to persist taskDate field for legacy tasks
-    saveTasks();
+    state.tasks = Array.isArray(parsed) ? parsed.filter(t => t && typeof t === 'object').map(normalizeTask) : [];
+    // Persist normalization (e.g. taskDate for legacy tasks) only when something changed
+    if (stored && JSON.stringify(state.tasks) !== stored) {
+      saveTasks();
+    }
   } catch (e) {
     console.warn('Failed to load tasks from localStorage:', e);
     state.tasks = [];
@@ -384,8 +386,6 @@ function normalizeTask(task) {
 function saveTasks() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
-    // Dispatch custom event for calendar view to listen
-    window.dispatchEvent(new CustomEvent('tasksUpdated'));
   } catch (e) {
     console.warn('Failed to save tasks to localStorage:', e);
   }
@@ -637,19 +637,28 @@ function getFilteredTasks() {
   if (state.searchQuery) {
     const query = state.searchQuery.toLowerCase();
     filtered = filtered.filter(t =>
-      t.title.toLowerCase().includes(query) ||
-      t.note.toLowerCase().includes(query)
+      (t.title || '').toLowerCase().includes(query) ||
+      (t.note || '').toLowerCase().includes(query)
     );
   }
 
   return filtered;
 }
 
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+
 function renderTasks() {
   const filtered = getFilteredTasks();
 
   if (filtered.length === 0) {
-    elements.taskList.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:2rem;">No tasks to show</p>';
+    const emptyText = state.searchQuery
+      ? 'No tasks match your search'
+      : state.filter !== 'all' ? 'No tasks in this filter' : 'No tasks for this day yet. Add one above ✨';
+    elements.taskList.innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:2rem;">${emptyText}</p>`;
     return;
   }
 
@@ -658,7 +667,7 @@ function renderTasks() {
       const detail = CATEGORY_DETAILS[task.category] || CATEGORY_DETAILS.IU;
       return `
     <div class="task-item ${task.status} ${task.id === state.selectedTaskId ? 'selected' : ''}" 
-         data-id="${task.id}" 
+         data-id="${escapeHTML(task.id)}"
          draggable="true">
       <span class="drag-handle">☰</span>
       <input type="checkbox" 
@@ -667,8 +676,8 @@ function renderTasks() {
              ${task.status === 'cancelled' ? 'disabled' : ''}>
       <button class="priority-chip ${detail.label}" title="${detail.title}" aria-label="${detail.title}">${detail.label}</button>
       <div class="task-content">
-        <div class="task-title" contenteditable="${task.status !== 'cancelled'}">${task.title}</div>
-        <div class="task-note" contenteditable="${task.status !== 'cancelled'}">${task.note}</div>
+        <div class="task-title" contenteditable="${task.status !== 'cancelled'}">${escapeHTML(task.title)}</div>
+        <div class="task-note" contenteditable="${task.status !== 'cancelled'}">${escapeHTML(task.note)}</div>
         ${(task.estimatedHours > 0 || task.estimatedMinutes > 0) ? `
           <div class="task-estimated-time">
             <span class="time-icon">⏱</span>
@@ -690,9 +699,9 @@ function renderTasks() {
         <div class="task-move-options">
           <button class="chip move-chip" data-move-today>Move to Today</button>
           <div class="task-move-date">
-            <label for="moveDate-${task.id}">Pick a date</label>
+            <label for="moveDate-${escapeHTML(task.id)}">Pick a date</label>
             <div class="task-move-date-input">
-              <input type="date" id="moveDate-${task.id}" data-move-date-input value="${task.taskDate || ''}">
+              <input type="date" id="moveDate-${escapeHTML(task.id)}" data-move-date-input value="${escapeHTML(task.taskDate || '')}">
               <button class="btn-ghost btn-compact" data-move-apply>Move</button>
             </div>
           </div>
@@ -1388,7 +1397,19 @@ function syncPomoTimer() {
   }
 
   elements.timerDisplay.textContent = formatTime(state.pomo.secs);
+  updateDocumentTitle();
   persistPomoState();
+}
+
+const BASE_TITLE = document.title;
+// Show the countdown in the browser tab so it's visible from other tabs
+function updateDocumentTitle() {
+  if (state.pomo.running) {
+    const label = state.pomo.mode === 'short' || state.pomo.mode === 'long' ? 'Break' : 'Focus';
+    document.title = `${formatTime(state.pomo.secs)} · ${label} | Focus List`;
+  } else if (document.title !== BASE_TITLE) {
+    document.title = BASE_TITLE;
+  }
 }
 
 function initPomo() {
@@ -1532,6 +1553,10 @@ elements.modePills.forEach(pill => {
 
 function startPomo() {
   if (state.pomo.running) return;
+  // Ask once, on a user tap, so we can notify when a session ends while the tab is hidden
+  if ('Notification' in window && Notification.permission === 'default') {
+    try { Notification.requestPermission().catch(() => { }); } catch (e) { }
+  }
 
   state.pomo.running = true;
   state.pomo.startedAt = Date.now();
@@ -1560,6 +1585,7 @@ function pausePomo() {
   if (state.pomo.mode === 'deepwork') {
     state.pomo.deepworkBase = state.pomo.secs;
   }
+  updateDocumentTitle();
   persistPomoState();
 }
 
@@ -1577,22 +1603,46 @@ function resetPomo() {
   }
   elements.timerDisplay.textContent = formatTime(state.pomo.secs);
   elements.startPauseBtn.textContent = 'Start';
+  updateDocumentTitle();
   persistPomoState();
 }
 
+let chimeContext = null;
+
+// Mobile browsers only play audio from a context created/resumed during a tap,
+// so create it on the first interaction and reuse it for the completion chime.
+function unlockChimeAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  try {
+    if (!chimeContext) chimeContext = new AudioContextClass();
+    if (chimeContext.state === 'suspended') chimeContext.resume().catch(() => { });
+  } catch (e) { }
+}
+['pointerdown', 'keydown'].forEach(evt => document.addEventListener(evt, unlockChimeAudio, { passive: true }));
+
+function notifyPomoComplete(finishedMode) {
+  try {
+    if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(finishedMode === 'work' ? 'Focus session done. Take a break ☕' : 'Break over. Back to focus 🎯', {
+        icon: 'icons/icon-192.png'
+      });
+    }
+  } catch (e) { }
+  // Browsers only allow vibration after the user has tapped the page at least once
+  const hasTapped = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+  if (navigator.vibrate && hasTapped) {
+    try { navigator.vibrate([200, 100, 200]); } catch (e) { }
+  }
+}
+
 function onPomoComplete() {
+  notifyPomoComplete(state.pomo.mode);
   if (state.pomo.soundOn) {
     try {
-      // Try to create audio context (may require user interaction on mobile)
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        const audioContext = new AudioContextClass();
-        // Resume audio context if suspended (required for mobile browsers)
-        if (audioContext.currentTime === 0 || audioContext.state === 'suspended') {
-          audioContext.resume().catch(() => {
-            // Audio context resume failed, continue silently
-          });
-        }
+      unlockChimeAudio();
+      const audioContext = chimeContext;
+      if (audioContext) {
 
         const now = audioContext.currentTime;
         const baseTime = now;
@@ -1652,9 +1702,6 @@ function onPomoComplete() {
         saveTasks();
         renderTasks();
         updateCounts();
-
-        // Notify calendar view if open
-        window.dispatchEvent(new CustomEvent('tasksUpdated'));
       }
     }
 
@@ -1694,6 +1741,7 @@ function switchMode(mode) {
   }
 
   elements.timerDisplay.textContent = formatTime(state.pomo.secs);
+  updateDocumentTitle();
   persistPomoState();
 }
 
@@ -1770,6 +1818,29 @@ function initVideoBackground() {
   const bg = elements.heroBg;
   let videoShown = false;
   let userInteracted = false;
+
+  const saveData = navigator.connection && navigator.connection.saveData;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (saveData || reduceMotion) {
+    // Poster image only: saves ~1 MB per visit on data-saver connections
+    video.removeAttribute('autoplay');
+    video.preload = 'none';
+    return;
+  }
+
+  // Pause the background video while it is scrolled out of view (saves battery on phones)
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!videoShown) return;
+        if (entry.isIntersecting && !document.hidden) {
+          video.play().catch(() => { });
+        } else {
+          video.pause();
+        }
+      });
+    }, { threshold: 0.05 }).observe(bg);
+  }
 
   // Function to attempt video playback
   function attemptPlay() {
@@ -1926,19 +1997,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Listen for task updates from calendar view
-window.addEventListener('tasksUpdated', () => {
-  loadTasks();
-  renderTasks();
-  updateCounts();
+// Tasks changed in another tab, or arrived from cloud sync (sync.js fires storage events)
+window.addEventListener('storage', (e) => {
+  if (e.key === null || e.key === STORAGE_KEY) {
+    loadTasks();
+    renderTasks();
+    updateCounts();
+  } else if (e.key.startsWith('availableHours_')) {
+    loadAvailableHoursForDate();
+  }
 });
-
-// Also listen for storage changes (for cross-tab sync)
-window.addEventListener('storage', () => {
-  loadTasks();
-  renderTasks();
-  updateCounts();
-});
+// Tells sync.js this page refreshes itself when cloud data arrives (no page reload needed)
+window.__flLiveSync = true;
 
 function formatDateDisplay(date) {
   const today = new Date();
@@ -2061,13 +2131,12 @@ function startDailyRolloverWatcher() {
   }, 60 * 1000);
 }
 
+// The ticker keeps running while hidden (browsers slow it down but still fire it),
+// so the completion chime/notification arrives on time even in a background tab.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     syncPomoTimer();
     persistPomoState();
-    if (state.pomo.running) {
-      stopPomoTicker();
-    }
   } else {
     syncPomoTimer();
     if (state.pomo.running) {
@@ -2093,6 +2162,33 @@ window.addEventListener('beforeunload', () => {
   persistPomoState();
 });
 
+// Focus sounds: quick ambience toggles under the timer (engine: ambience-engine.js)
+function initFocusSounds() {
+  const engine = window.FLAmbience;
+  const chips = document.getElementById('focusSoundChips');
+  if (!engine || !chips) return;
+
+  chips.innerHTML = engine.SOUNDS.map(s => `
+    <button type="button" class="focus-sound-chip" data-sound="${s.id}" aria-pressed="false">
+      <span aria-hidden="true">${s.icon}</span><span>${s.title}</span>
+    </button>`).join('');
+
+  chips.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-sound]');
+    if (chip) engine.toggle(chip.dataset.sound);
+  });
+
+  const render = () => {
+    chips.querySelectorAll('[data-sound]').forEach(chip => {
+      const on = engine.isPlaying(chip.dataset.sound);
+      chip.classList.toggle('on', on);
+      chip.setAttribute('aria-pressed', String(on));
+    });
+  };
+  engine.onChange(render);
+  render();
+}
+
 // Initialize app only when DOM is ready
 function initApp() {
   // Check if all critical elements exist
@@ -2109,6 +2205,7 @@ function initApp() {
   initVideoBackground();
   initDateNavigation();
   startDailyRolloverWatcher();
+  initFocusSounds();
 
   // Ensure quote rotation starts after all initialization is complete
   setTimeout(() => {

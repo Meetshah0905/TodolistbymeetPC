@@ -1,5 +1,11 @@
 const STORAGE_KEY = 'focuslist_tasks_v1';
 
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[ch]);
+}
+
 // Safe localStorage functions
 function safeGetItem(key, defaultValue) {
   try {
@@ -41,26 +47,26 @@ function getTasksForDate(tasks, date) {
   const targetKey = formatDateKey(target);
   const targetYMD = formatDateAsYYYYMMDD(target);
 
+  // The first date field a task has decides its day (same order as the To-Do list).
+  // Falling through to later fields made a task moved to another day also show on
+  // the day it was created.
   const filtered = tasks.filter(task => {
-    if (task.taskDate && targetYMD) {
-      if (task.taskDate === targetYMD) {
-        return true;
-      }
+    if (task.taskDate) {
+      return task.taskDate === targetYMD;
     }
 
     const rawDateValue = task?.dateValue;
     if (rawDateValue !== undefined && rawDateValue !== null) {
       const numericValue = typeof rawDateValue === 'string' ? Number(rawDateValue) : rawDateValue;
-      if (!Number.isNaN(numericValue) && numericValue === targetValue) {
-        return true;
+      if (!Number.isNaN(numericValue)) {
+        const d = new Date(numericValue);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === targetValue;
       }
     }
 
     if (task.date) {
-      const normalizedKey = formatDateKey(task.date);
-      if (normalizedKey === targetKey) {
-        return true;
-      }
+      return formatDateKey(task.date) === targetKey;
     }
 
     const taskDate = new Date(task.createdAt || Date.now());
@@ -153,8 +159,6 @@ function calculateProgress(task) {
 function saveTasks() {
   try {
     safeSetItem(STORAGE_KEY, JSON.stringify(tasks));
-    // Dispatch custom event for list view to listen
-    window.dispatchEvent(new CustomEvent('tasksUpdated'));
   } catch (e) {
     console.warn('Failed to save tasks:', e);
   }
@@ -737,14 +741,14 @@ function renderCalendar(animate = true) {
                    draggable="true"
                    tabindex="0"
                    role="button"
-                   aria-label="Task: ${task.title}">
+                   aria-label="Task: ${escapeHTML(task.title)}">
                 <div class="task-header-row">
                   <div class="task-name-row">
                     <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} ${isCancelled ? 'disabled' : ''} 
                            onchange="toggleTaskDone('${task.id}')" title="${isCancelled ? 'Task cancelled' : 'Mark as done'}">
                     <div class="task-name">
-                      ${task.emoji ? `<span class="task-emoji">${task.emoji}</span>` : ''}
-                      <span class="task-title-text">${task.title}</span>
+                      ${task.emoji ? `<span class="task-emoji">${escapeHTML(task.emoji)}</span>` : ''}
+                      <span class="task-title-text">${escapeHTML(task.title)}</span>
                     </div>
                   </div>
                   <div class="task-pomo-controls">
@@ -932,38 +936,15 @@ function handleDragEnd(e) {
   draggedOverTask = null;
 }
 
-// Listen for task updates from list view
-window.addEventListener('tasksUpdated', () => {
-  // Don't re-render on external updates - just reload tasks
-  // The calendar will update naturally when user interacts
+// Tasks changed in another tab or arrived from cloud sync
+window.addEventListener('storage', (e) => {
+  if (e.key !== null && e.key !== STORAGE_KEY) return;
   tasks = loadTasks();
-  // Only update if calendar is already rendered
   if (elements.calendarGrid && elements.calendarGrid.children.length > 0) {
-    // Update existing task elements instead of full re-render
-    tasks.forEach(task => {
-      const taskEl = document.querySelector(`[data-task-id="${task.id}"]`);
-      if (taskEl) {
-        updateTaskElement(task.id);
-      }
-    });
+    renderCalendar(false);
   }
 });
-
-// Also listen for storage changes (for cross-tab sync)
-window.addEventListener('storage', () => {
-  // Don't re-render on storage sync - just reload tasks
-  tasks = loadTasks();
-  // Only update if calendar is already rendered
-  if (elements.calendarGrid && elements.calendarGrid.children.length > 0) {
-    // Update existing task elements instead of full re-render
-    tasks.forEach(task => {
-      const taskEl = document.querySelector(`[data-task-id="${task.id}"]`);
-      if (taskEl) {
-        updateTaskElement(task.id);
-      }
-    });
-  }
-});
+window.__flLiveSync = true;
 
 // Initialize app when DOM is ready
 function initCalendarApp() {

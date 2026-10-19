@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Habit Tracker</title>
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -1080,6 +1080,14 @@
       }
     }
   </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="app-shell.css">
 </head>
 
 <body>
@@ -1149,6 +1157,9 @@
             📊 Monthly Stats
           </button>
         </div>
+
+        <!-- Today's quick check-in (big tap targets, mainly for phones) -->
+        <div class="habit-today" id="habitToday" hidden></div>
 
         <!-- Table -->
         <div class="habit-table-wrapper">
@@ -1236,9 +1247,46 @@
 
   <script>
     // State
+    // Always day 1 of the viewed month, so month math never overflows (e.g. Mar 31 -> "Feb 31")
     let currentDate = new Date();
+    currentDate.setDate(1);
     let habits = [];
     let habitData = {}; // { habitId: { [dateKey]: true/false } }
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[ch]);
+    }
+
+    // Size a canvas for the screen's pixel density so charts stay sharp on phones.
+    // Returns the CSS-pixel width/height to draw with.
+    function setupCanvas(canvas) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      const width = canvas.offsetWidth;
+      const height = canvas.offsetHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, width, height };
+    }
+
+    function refreshAll() {
+      loadData();
+      renderTable();
+      updateSummary();
+      renderDailyProgress();
+      renderGraphs();
+    }
+
+    // Habits changed in another tab or arrived from cloud sync
+    window.addEventListener('storage', (e) => {
+      if (e.key === null || e.key === getStorageKey() || (e.key && e.key.startsWith('habits_'))) {
+        refreshAll();
+      }
+    });
+    window.__flLiveSync = true;
 
     // Initialize
     function init() {
@@ -1304,12 +1352,20 @@
       localStorage.setItem(getStorageKey(), JSON.stringify(data));
     }
 
+    function readMonth(key) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || 'null');
+        return data && typeof data === 'object' ? data : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
     function loadData() {
-      const stored = localStorage.getItem(getStorageKey());
-      if (stored) {
-        const data = JSON.parse(stored);
-        habits = data.habits || [];
-        habitData = data.habitData || {};
+      const data = readMonth(getStorageKey());
+      if (data) {
+        habits = Array.isArray(data.habits) ? data.habits : [];
+        habitData = data.habitData && typeof data.habitData === 'object' ? data.habitData : {};
 
         // Initialize order for habits that don't have it
         habits.forEach((habit, index) => {
@@ -1318,13 +1374,36 @@
           }
         });
       } else {
-        habits = [];
+        habits = carryOverHabits();
         habitData = {};
       }
     }
 
+    // A new month starts with the same habit list as the latest earlier month
+    // (checkmarks start fresh). Only for the current month or later, never the past.
+    function carryOverHabits() {
+      const now = new Date();
+      const viewing = currentDate.getFullYear() * 12 + currentDate.getMonth();
+      if (viewing < now.getFullYear() * 12 + now.getMonth()) return [];
+
+      for (let back = 1; back <= 12; back++) {
+        const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - back, 1);
+        const prev = readMonth(`habits_${d.getFullYear()}_${d.getMonth()}`);
+        if (prev && Array.isArray(prev.habits) && prev.habits.length) {
+          return prev.habits.map((h, index) => ({
+            id: h.id,
+            name: h.name,
+            order: h.order !== undefined ? h.order : index
+          }));
+        }
+      }
+      return [];
+    }
+
     // Month navigation
     function changeMonth(delta) {
+      // Go to day 1 first: on the 31st, setMonth(+1) would skip short months
+      currentDate.setDate(1);
       currentDate.setMonth(currentDate.getMonth() + delta);
       loadData();
       renderTable();
@@ -1385,11 +1464,13 @@
       const thead = document.getElementById('tableHead');
       thead.innerHTML = '';
 
-      // Habit name column header
+      // Habit name column header (first header row: "My Habits" + week labels)
+      const weekRow = document.createElement('tr');
       const nameHeader = document.createElement('th');
       nameHeader.className = 'habit-name-col';
       nameHeader.textContent = 'My Habits';
-      thead.appendChild(nameHeader);
+      weekRow.appendChild(nameHeader);
+      thead.appendChild(weekRow);
 
       // Group days by weeks
       const weeks = [];
@@ -1418,11 +1499,14 @@
         weekHeader.className = 'week-header';
         weekHeader.colSpan = week.length;
         weekHeader.textContent = `Week ${weekIndex + 1}`;
-        thead.appendChild(weekHeader);
+        weekRow.appendChild(weekHeader);
       });
 
       const dayRow = document.createElement('tr');
-      dayRow.appendChild(document.createElement('th')); // Empty cell for habit names
+      // Empty cell under "My Habits": sticky like the name column so day labels stay aligned
+      const spacer = document.createElement('th');
+      spacer.className = 'habit-name-col';
+      dayRow.appendChild(spacer);
 
       weeks.forEach(week => {
         week.forEach(day => {
@@ -1467,8 +1551,8 @@
         nameCell.innerHTML = `
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <span style="cursor: move; user-select: none; color: var(--text-secondary); font-size: 1.2rem; margin-right: 0.25rem;" title="Drag to reorder">☰</span>
-            <button class="habit-delete-btn" onclick="deleteHabit('${habit.id}')" aria-label="Delete habit">×</button>
-            <span>${habit.name}</span>
+            <button class="habit-delete-btn" data-delete-habit="${escapeHTML(habit.id)}" aria-label="Delete habit">×</button>
+            <span>${escapeHTML(habit.name)}</span>
           </div>
         `;
         row.appendChild(nameCell);
@@ -1492,6 +1576,7 @@
               checkbox.onclick = () => {
                 toggleHabit(habit.id, dateKey);
                 checkbox.classList.toggle('checked');
+                if (isToday) renderTodayCheckin();
               };
 
               cell.appendChild(checkbox);
@@ -1505,6 +1590,59 @@
 
       // Initialize drag and drop after rendering
       initHabitDragAndDrop();
+      renderTodayCheckin();
+      scrollTableToToday();
+    }
+
+    function isViewingCurrentMonth() {
+      const now = new Date();
+      return currentDate.getFullYear() === now.getFullYear() && currentDate.getMonth() === now.getMonth();
+    }
+
+    function renderTodayCheckin() {
+      const container = document.getElementById('habitToday');
+      if (!container) return;
+      if (!isViewingCurrentMonth() || habits.length === 0) {
+        container.hidden = true;
+        container.innerHTML = '';
+        return;
+      }
+      const todayKey = getDateKey(new Date());
+      const sorted = [...habits].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      const doneCount = sorted.filter(h => habitData[h.id] && habitData[h.id][todayKey]).length;
+      container.hidden = false;
+      container.innerHTML = `
+        <div class="habit-today-head">
+          <span>Today</span>
+          <span class="habit-today-count">${doneCount}/${sorted.length} done</span>
+        </div>
+        <div class="habit-today-list">
+          ${sorted.map(h => {
+            const done = !!(habitData[h.id] && habitData[h.id][todayKey]);
+            return `<button type="button" class="habit-today-item${done ? ' done' : ''}" data-today-habit="${escapeHTML(h.id)}" aria-pressed="${done}">
+              <span class="habit-today-check">${done ? '✓' : ''}</span>
+              <span class="habit-today-name">${escapeHTML(h.name)}</span>
+            </button>`;
+          }).join('')}
+        </div>`;
+      container.querySelectorAll('[data-today-habit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          toggleHabit(btn.dataset.todayHabit, todayKey);
+          renderTable();
+        });
+      });
+    }
+
+    // On narrow screens the month table scrolls sideways: bring today's column into view
+    function scrollTableToToday() {
+      if (!isViewingCurrentMonth()) return;
+      const wrapper = document.querySelector('.habit-table-wrapper');
+      const todayCell = document.querySelector('#tableBody .habit-checkbox.today');
+      const nameCol = document.querySelector('.habit-table th.habit-name-col, .habit-name-cell');
+      if (!wrapper || !todayCell || wrapper.scrollWidth <= wrapper.clientWidth) return;
+      const cell = todayCell.closest('td');
+      const offset = cell.offsetLeft - (nameCol ? nameCol.offsetWidth : 0) - 8;
+      wrapper.scrollLeft = Math.max(0, offset - cell.offsetWidth * 2);
     }
 
     // Drag and drop functionality for reordering habits
@@ -1525,6 +1663,7 @@
         // Prevent drag on delete button
         const deleteBtn = row.querySelector('.habit-delete-btn');
         if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => deleteHabit(deleteBtn.dataset.deleteHabit));
           deleteBtn.addEventListener('mousedown', (e) => {
             e.stopPropagation();
           });
@@ -1697,11 +1836,7 @@
 
     function renderAreaChart() {
       const canvas = document.getElementById('areaChart');
-      const ctx = canvas.getContext('2d');
-      const width = canvas.offsetWidth;
-      const height = canvas.offsetHeight;
-      canvas.width = width;
-      canvas.height = height;
+      const { ctx, width, height } = setupCanvas(canvas);
 
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
@@ -1845,7 +1980,7 @@
         item.className = 'habit-analysis-item';
         item.innerHTML = `
           <div class="habit-analysis-header">
-            <span class="habit-analysis-name">${habit.name}</span>
+            <span class="habit-analysis-name">${escapeHTML(habit.name)}</span>
             <div class="habit-analysis-numbers">
               <span>Goal: ${goal}</span>
               <span>Actual: ${actual}</span>
@@ -1864,11 +1999,7 @@
       const canvas = document.getElementById('donutChart');
       if (!canvas) return;
       
-      const ctx = canvas.getContext('2d');
-      const width = canvas.offsetWidth;
-      const height = canvas.offsetHeight;
-      canvas.width = width;
-      canvas.height = height;
+      const { ctx, width, height } = setupCanvas(canvas);
 
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
@@ -1989,7 +2120,7 @@
         habitItem.className = 'habit-top-habit-item';
         habitItem.innerHTML = `
           <div class="habit-top-habit-number">${index + 1}.</div>
-          <div class="habit-top-habit-name">${item.habit.name}</div>
+          <div class="habit-top-habit-name">${escapeHTML(item.habit.name)}</div>
           <div class="habit-top-habit-percent">${item.percent}%</div>
         `;
         container.appendChild(habitItem);
@@ -2130,8 +2261,8 @@
         const item = document.createElement('div');
         item.className = 'habit-copy-item';
         item.innerHTML = `
-          <div class="habit-copy-checkbox checked" data-habit-id="${habit.id}"></div>
-          <div class="habit-copy-name">${habit.name}</div>
+          <div class="habit-copy-checkbox checked" data-habit-id="${escapeHTML(habit.id)}"></div>
+          <div class="habit-copy-name">${escapeHTML(habit.name)}</div>
         `;
         item.querySelector('.habit-copy-checkbox').addEventListener('click', function () {
           this.classList.toggle('checked');
@@ -2345,6 +2476,7 @@
           <div class="habit-year-month-value">${percent}%</div>
         `;
         monthEl.addEventListener('click', () => {
+          currentDate.setDate(1);
           currentDate.setMonth(m);
           loadData();
           renderTable();
@@ -2401,6 +2533,9 @@
     document.addEventListener('DOMContentLoaded', init);
   </script>
 
+  <script src="nav.js" defer></script>
+  <script src="supabase-config.js" defer></script>
+  <script src="sync.js" defer></script>
 </body>
 
 </html>

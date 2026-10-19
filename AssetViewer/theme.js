@@ -47,12 +47,24 @@ function setTheme(theme) {
   announceThemeChange(theme);
 }
 
+// "system" is resolved to an explicit light/dark value, because many styles are written
+// as [data-theme="dark"] ... and would otherwise never apply for system-dark users.
+function resolveTheme(theme) {
+  if (theme !== 'system') return theme;
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 function applyTheme(theme) {
-  if (theme === 'system') {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
+  document.documentElement.setAttribute('data-theme', resolveTheme(theme));
+}
+
+if (window.matchMedia) {
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSystemChange = () => {
+    if (currentTheme === 'system') applyTheme('system');
+  };
+  if (darkQuery.addEventListener) darkQuery.addEventListener('change', onSystemChange);
+  else if (darkQuery.addListener) darkQuery.addListener(onSystemChange);
 }
 
 function updateThemeIcon(theme) {

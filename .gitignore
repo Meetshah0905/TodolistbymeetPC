@@ -1,0 +1,36 @@
+# Dependencies - Only exclude node_modules (the main issue)
+node_modules/
+
+# Build outputs (only if they exist)
+dist/
+build/
+.next/
+out/
+
+# Environment variables (if you add them later)
+.env
+.env.local
+
+# IDE files (optional - uncomment if you don't want to track these)
+# .vscode/
+# .idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python cache (if you use Python server)
+__pycache__/
+*.pyc
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log
+
+
+# Replit agent state (not part of the app)
+AssetViewer/.local/

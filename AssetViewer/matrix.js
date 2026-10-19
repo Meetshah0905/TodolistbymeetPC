@@ -46,13 +46,10 @@ function initMatrix() {
   initAddForms();
   renderMatrix();
 
-  window.addEventListener('tasksUpdated', () => {
-    matrixState.tasks = loadTasks();
-    renderMatrix();
-  });
-
+  // Tasks changed in another tab or arrived from cloud sync
+  window.__flLiveSync = true;
   window.addEventListener('storage', event => {
-    if (event.key === STORAGE_KEY) {
+    if (event.key === null || event.key === STORAGE_KEY) {
       matrixState.tasks = loadTasks();
       renderMatrix();
     }
@@ -75,7 +72,6 @@ function loadTasks() {
 function saveTasks(tasks) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-    window.dispatchEvent(new CustomEvent('tasksUpdated'));
   } catch (error) {
     console.warn('Matrix view failed to save tasks', error);
   }
@@ -368,6 +364,7 @@ function addTaskFromMatrix({ title, note, category }) {
     status: 'active',
     createdAt: now,
     updatedAt: now,
+    taskDate: formatYMD(day),
     date: day.toDateString(),
     dateValue: day.getTime(),
     pomoSessions: 0,
@@ -465,32 +462,36 @@ function normalizeDateInfo(source) {
   };
 }
 
+// The first date field a task has decides its day (same order as the To-Do list);
+// falling through to createdAt made moved tasks also show on the day they were created.
 function isTaskOnCurrentDate(task) {
   if (!task) return false;
   const target = matrixState.currentDate;
 
+  if (task.taskDate) {
+    return task.taskDate === formatYMD(target.date);
+  }
+
   if (task.dateValue !== undefined && task.dateValue !== null) {
     const numeric = typeof task.dateValue === 'string' ? Number(task.dateValue) : task.dateValue;
-    if (!Number.isNaN(numeric) && numeric === target.value) {
-      return true;
+    if (!Number.isNaN(numeric)) {
+      return normalizeDateInfo(numeric).value === target.value;
     }
   }
 
   if (task.date) {
-    const key = formatDateKey(task.date);
-    if (key === target.key) {
-      return true;
-    }
+    return formatDateKey(task.date) === target.key;
   }
 
   if (task.createdAt) {
-    const created = normalizeDateInfo(task.createdAt);
-    if (created.value === target.value) {
-      return true;
-    }
+    return normalizeDateInfo(task.createdAt).value === target.value;
   }
 
   return false;
+}
+
+function formatYMD(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 function formatDateKey(date) {
