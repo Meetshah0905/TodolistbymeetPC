@@ -47,26 +47,26 @@ function getTasksForDate(tasks, date) {
   const targetKey = formatDateKey(target);
   const targetYMD = formatDateAsYYYYMMDD(target);
 
+  // The first date field a task has decides its day (same order as the To-Do list).
+  // Falling through to later fields made a task moved to another day also show on
+  // the day it was created.
   const filtered = tasks.filter(task => {
-    if (task.taskDate && targetYMD) {
-      if (task.taskDate === targetYMD) {
-        return true;
-      }
+    if (task.taskDate) {
+      return task.taskDate === targetYMD;
     }
 
     const rawDateValue = task?.dateValue;
     if (rawDateValue !== undefined && rawDateValue !== null) {
       const numericValue = typeof rawDateValue === 'string' ? Number(rawDateValue) : rawDateValue;
-      if (!Number.isNaN(numericValue) && numericValue === targetValue) {
-        return true;
+      if (!Number.isNaN(numericValue)) {
+        const d = new Date(numericValue);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === targetValue;
       }
     }
 
     if (task.date) {
-      const normalizedKey = formatDateKey(task.date);
-      if (normalizedKey === targetKey) {
-        return true;
-      }
+      return formatDateKey(task.date) === targetKey;
     }
 
     const taskDate = new Date(task.createdAt || Date.now());

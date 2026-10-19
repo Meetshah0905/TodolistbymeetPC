@@ -1629,7 +1629,9 @@ function notifyPomoComplete(finishedMode) {
       });
     }
   } catch (e) { }
-  if (navigator.vibrate) {
+  // Browsers only allow vibration after the user has tapped the page at least once
+  const hasTapped = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+  if (navigator.vibrate && hasTapped) {
     try { navigator.vibrate([200, 100, 200]); } catch (e) { }
   }
 }

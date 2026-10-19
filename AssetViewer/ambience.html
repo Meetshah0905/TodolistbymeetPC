@@ -441,6 +441,8 @@
     <script>
         (function () {
             const engine = window.FLAmbience;
+            // Nothing on this page shows synced data, so cloud updates must not reload it (and stop the music)
+            window.__flLiveSync = true;
             const grid = document.getElementById('musicGrid');
             const status = document.getElementById('ambStatus');
             const sleepSelect = document.getElementById('sleepTimer');

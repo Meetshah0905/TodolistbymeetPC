@@ -85,6 +85,9 @@ const VIDEO_SOURCES = [
   "assets/videos/1 (44).mp4"
 ];
 
+// Nothing on this page shows synced data, so cloud updates must not reload it mid-video
+window.__flLiveSync = true;
+
 document.addEventListener('DOMContentLoaded', () => {
   const grid = document.getElementById('motivationGrid');
   const modal = setupModal();

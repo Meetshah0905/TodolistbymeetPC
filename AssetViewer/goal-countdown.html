@@ -730,6 +730,15 @@
       clearAllBtn.addEventListener('click', handleClearAll);
       searchInput.addEventListener('input', render);
 
+      // Goals changed in another tab or arrived from cloud sync
+      window.addEventListener('storage', event => {
+        if (event.key === null || event.key === STORAGE_KEY) {
+          goals = safeLoad();
+          render();
+        }
+      });
+      window.__flLiveSync = true;
+
       updateCurrentTime();
       setInterval(updateCurrentTime, 60_000);
       render();

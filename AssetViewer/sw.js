@@ -4,7 +4,7 @@
 // - Images and icons: cache first.
 // - Video/audio and other sites (Supabase, CDN) are never touched.
 // Bump VERSION when you deploy changes to the files listed in SHELL.
-const VERSION = 'fl-v2';
+const VERSION = 'fl-v3';
 const SHELL = [
   './',
   'index.html',

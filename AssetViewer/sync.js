@@ -284,15 +284,25 @@
   let sb = null;          // supabase-js client (Google/email accounts only)
   let sdkPromise = null;
 
+  // Waits for the sign-in library: a sync that starts before it has loaded must not be
+  // mistaken for "signed out" (that used to clear Google/email accounts on slow networks).
   async function accessToken() {
-    if (!sb) return null;
+    await loadSdk();
     const { data } = await sb.auth.getSession();
     return data && data.session ? data.session.access_token : null;
   }
 
   async function rpc(fn, args, opts) {
     const headers = { 'Content-Type': 'application/json', apikey: CFG.anonKey };
-    const token = (opts && opts.useAuth) ? await accessToken() : null;
+    let token = null;
+    if (opts && opts.useAuth) {
+      token = await accessToken();
+      if (!token) {
+        const err = new Error('not_signed_in');
+        err.code = 'not_signed_in';
+        throw err;
+      }
+    }
     headers.Authorization = `Bearer ${token || CFG.anonKey}`;
     const body = JSON.stringify(args || {});
     const res = await fetch(`${API}/rest/v1/rpc/${fn}`, {
@@ -760,6 +770,7 @@
     modal.addEventListener('change', e => {
       if (e.target.matches('[data-restore-file]') && e.target.files[0]) {
         const file = e.target.files[0];
+        e.target.value = ''; // so picking the same file again still triggers a change
         if (!confirm('Restore this backup? Matching data on this device will be replaced by the backup.')) return;
         restoreBackup(file)
           .then(n => {
